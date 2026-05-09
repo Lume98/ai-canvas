@@ -2,6 +2,9 @@
 
 # Dependencies
 node_modules
+.venv
+.uv-cache
+__pycache__
 .pnp
 .pnp.js
 
@@ -22,6 +25,7 @@ coverage
 .vercel
 
 # Build Outputs
+.data
 .next/
 out/
 build

@@ -1,5 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": ["AI_CANVAS_WORKER_URL"],
   "ui": "tui",
   "tasks": {
     "build": {
@@ -17,6 +18,10 @@
       "dependsOn": ["^typecheck"]
     },
     "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "server": {
       "cache": false,
       "persistent": true
     }

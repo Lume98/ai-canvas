@@ -1,0 +1,12 @@
+{
+  "name": "worker",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "AI_CANVAS_DATABASE_PATH=../../.data/ai-canvas.sqlite UV_CACHE_DIR=.uv-cache uv run ai-canvas-worker serve",
+    "server": "AI_CANVAS_DATABASE_PATH=../../.data/ai-canvas.sqlite UV_CACHE_DIR=.uv-cache uv run ai-canvas-worker serve",
+    "build": "UV_CACHE_DIR=.uv-cache uv run python -m compileall src/ai_canvas_worker",
+    "lint": "UV_CACHE_DIR=.uv-cache uv run python -m compileall src/ai_canvas_worker",
+    "typecheck": "UV_CACHE_DIR=.uv-cache uv run python -m compileall src/ai_canvas_worker"
+  }
+}
