@@ -2,6 +2,10 @@
 
 Python background worker managed by `uv`.
 
+## Documentation
+
+See [docs/worker.md](docs/worker.md) for the worker architecture, HTTP API, task lifecycle, storage model, and known design risks.
+
 ## Commands
 
 ```bash
