@@ -275,7 +275,7 @@ queued -> running -> succeeded
 
 - `queued`：任务已创建，等待 worker 领取。
 - `running`：worker 通过 `claim_next_task()` 原子领取任务。
-- `succeeded`：图片生成并保存成功，`resultUrl` 指向 `/v1/generated-images/...png`。
+- `succeeded`：图片生成并保存成功，HTTP 响应中的 `resultUrl` 指向 `/v1/generated-images/...png`。
 - `failed`：生成或保存失败，`errorMessage` 保存错误信息。
 - `canceled`：保留状态，当前未被实际写入。
 
@@ -297,7 +297,7 @@ queued -> running -> succeeded
 - `prompt`、`model`、`size`、`quality`：图像生成参数。
 - `status`：任务状态。
 - `progress`：当前只有创建时 `0` 和成功时 `100`。
-- `result_url`：生成图片公开路径。
+- `result_filename`：生成图片文件名。HTTP API 会在响应边界转换为 `resultUrl` 公开路径。
 - `error_message`：失败原因。
 - `attempts`：被领取次数。
 - `created_at`、`updated_at`、`started_at`、`finished_at`：时间戳。

@@ -75,8 +75,8 @@ class DrawTaskService:
             )
         )
 
-    def mark_succeeded(self, task_id: str, result_url: str) -> None:
-        self._store.mark_succeeded(task_id, result_url)
+    def mark_succeeded(self, task_id: str, result_filename: str) -> None:
+        self._store.mark_succeeded(task_id, result_filename)
 
     def mark_failed(self, task_id: str, error_message: str) -> None:
         self._store.mark_failed(task_id, error_message)

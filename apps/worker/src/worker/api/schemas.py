@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field
 
-from ..validation import (
+from worker.validation import (
     ALLOWED_MODELS,
     ALLOWED_QUALITIES,
     ALLOWED_SIZES,

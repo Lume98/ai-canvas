@@ -4,7 +4,7 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ValidationError
 
-from ..validation import validate_draw_task_input, validate_provider_config_input
+from worker.validation import validate_draw_task_input, validate_provider_config_input
 from .schemas import DrawTaskRequest
 
 

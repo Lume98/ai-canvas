@@ -24,7 +24,7 @@ class ImageGenerationService:
         )
         image = self._image_store.save_png(image_bytes)
 
-        return image.public_path
+        return image.filename
 
     def resolve_generated_image(self, filename: str) -> Path | None:
         return self._image_store.resolve_png(filename)

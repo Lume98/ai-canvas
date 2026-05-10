@@ -24,5 +24,5 @@ class DrawTask:
 class DrawTaskResult:
     task_id: str
     status: DrawTaskStatus
-    result_url: str | None = None
+    result_filename: str | None = None
     error_message: str | None = None

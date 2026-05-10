@@ -12,7 +12,7 @@ class DrawTaskRunner:
 
     def run(self, task: DrawTask) -> DrawTaskResult:
         try:
-            result_url = self._executor(task)
+            result_filename = self._executor(task)
         except Exception as error:
             return DrawTaskResult(
                 task_id=task.id,
@@ -23,5 +23,5 @@ class DrawTaskRunner:
         return DrawTaskResult(
             task_id=task.id,
             status=DrawTaskStatus.SUCCEEDED,
-            result_url=result_url,
+            result_filename=result_filename,
         )

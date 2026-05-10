@@ -1,6 +1,7 @@
 import sqlite3
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 from .task import DrawTask, DrawTaskStatus
 from .validation import DEFAULT_OPENAI_BASE_URL, ProviderConfigInput
@@ -31,7 +32,7 @@ class SQLiteDrawTaskStore:
                   quality TEXT NOT NULL,
                   status TEXT NOT NULL,
                   progress INTEGER NOT NULL DEFAULT 0,
-                  result_url TEXT,
+                  result_filename TEXT,
                   error_message TEXT,
                   attempts INTEGER NOT NULL DEFAULT 0,
                   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -41,6 +42,7 @@ class SQLiteDrawTaskStore:
                 )
                 """
             )
+            self._migrate_result_filename_column(connection)
             connection.execute(
                 """
                 CREATE INDEX IF NOT EXISTS idx_draw_tasks_status_created_at
@@ -135,20 +137,20 @@ class SQLiteDrawTaskStore:
             attempts=row["attempts"],
         )
 
-    def mark_succeeded(self, task_id: str, result_url: str) -> None:
+    def mark_succeeded(self, task_id: str, result_filename: str) -> None:
         with self.connect() as connection:
             connection.execute(
                 """
                 UPDATE draw_tasks
                 SET status = ?,
                     progress = 100,
-                    result_url = ?,
+                    result_filename = ?,
                     error_message = NULL,
                     finished_at = CURRENT_TIMESTAMP,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?
                 """,
-                (DrawTaskStatus.SUCCEEDED.value, result_url, task_id),
+                (DrawTaskStatus.SUCCEEDED.value, result_filename, task_id),
             )
 
     def mark_failed(self, task_id: str, error_message: str) -> None:
@@ -223,7 +225,7 @@ class SQLiteDrawTaskStore:
             "quality": row["quality"],
             "status": row["status"],
             "progress": row["progress"],
-            "resultUrl": row["result_url"],
+            "resultFilename": row["result_filename"],
             "errorMessage": row["error_message"],
             "attempts": row["attempts"],
             "createdAt": row["created_at"],
@@ -231,3 +233,41 @@ class SQLiteDrawTaskStore:
             "startedAt": row["started_at"],
             "finishedAt": row["finished_at"],
         }
+
+    def _migrate_result_filename_column(self, connection: sqlite3.Connection) -> None:
+        columns = {
+            row["name"]
+            for row in connection.execute("PRAGMA table_info(draw_tasks)").fetchall()
+        }
+
+        if "result_filename" not in columns:
+            connection.execute("ALTER TABLE draw_tasks ADD COLUMN result_filename TEXT")
+
+        if "result_url" not in columns:
+            return
+
+        rows = connection.execute(
+            """
+            SELECT id, result_url
+            FROM draw_tasks
+            WHERE result_url IS NOT NULL
+              AND result_filename IS NULL
+            """
+        ).fetchall()
+
+        for row in rows:
+            connection.execute(
+                """
+                UPDATE draw_tasks
+                SET result_filename = ?
+                WHERE id = ?
+                """,
+                (extract_result_filename(row["result_url"]), row["id"]),
+            )
+
+
+def extract_result_filename(result_reference: str) -> str:
+    parsed_path = urlparse(result_reference).path
+    filename = Path(parsed_path).name
+
+    return filename or result_reference

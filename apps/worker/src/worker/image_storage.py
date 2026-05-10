@@ -2,8 +2,6 @@ import uuid
 from dataclasses import dataclass
 from pathlib import Path
 
-
-GENERATED_IMAGE_ROUTE_PREFIX = "/v1/generated-images/"
 PNG_CONTENT_TYPE = "image/png"
 
 
@@ -17,7 +15,6 @@ class ImageStorageError(Exception):
 class StoredImage:
     filename: str
     path: Path
-    public_path: str
 
 
 class GeneratedImageStore:
@@ -48,7 +45,6 @@ class GeneratedImageStore:
             return StoredImage(
                 filename=filename,
                 path=path,
-                public_path=f"{GENERATED_IMAGE_ROUTE_PREFIX}{filename}",
             )
 
         raise ImageStorageError("无法生成唯一图片文件名。")

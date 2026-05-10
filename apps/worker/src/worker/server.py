@@ -7,9 +7,10 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .app_services import WorkerRuntime, create_worker_runtime
+from .api import error_response
 from .image_storage import GeneratedImageStore
 from .runner import DrawTaskRunner
-from .routes import error_response, register_routes
+from .routes import register_routes
 from .store import SQLiteDrawTaskStore
 
 
@@ -96,8 +97,8 @@ class WorkerServer:
 
             result = runner.run(task)
 
-            if result.result_url:
-                draw_tasks.mark_succeeded(task.id, result.result_url)
+            if result.result_filename:
+                draw_tasks.mark_succeeded(task.id, result.result_filename)
             else:
                 draw_tasks.mark_failed(
                     task.id,

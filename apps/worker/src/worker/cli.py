@@ -116,8 +116,8 @@ def handle_work(args: Namespace, runtime: WorkerRuntime) -> None:
 
         result = runner.run(task)
 
-        if result.result_url:
-            draw_tasks.mark_succeeded(task.id, result.result_url)
+        if result.result_filename:
+            draw_tasks.mark_succeeded(task.id, result.result_filename)
         else:
             draw_tasks.mark_failed(task.id, result.error_message or "Unknown worker error.")
 

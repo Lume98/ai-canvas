@@ -1,19 +1,20 @@
-from fastapi import FastAPI, Request
+from fastapi import APIRouter, Request
 from fastapi.responses import FileResponse, JSONResponse, Response
 
-from ..image_storage import PNG_CONTENT_TYPE
-from ..services import ImageGenerationError, ImageGenerationService, ImageStorageError
-from .constants import API_PREFIX
-from .schemas import DrawTaskRequest
-from .utils import error_response, parse_request_model, request_body_schema
+from worker.api import error_response, parse_request_model, request_body_schema
+from worker.api.schemas import DrawTaskRequest
+from worker.image_storage import PNG_CONTENT_TYPE
+from worker.services import ImageGenerationError, ImageGenerationService, ImageStorageError
+
+from .paths import GENERATED_IMAGES_PATH, generated_image_public_path
 
 
 def register_image_routes(
-    app: FastAPI,
+    router: APIRouter,
     image_generation: ImageGenerationService,
 ) -> None:
-    @app.post(
-        f"{API_PREFIX}/images/generate",
+    @router.post(
+        "/images/generate",
         tags=["Images"],
         response_model=None,
         openapi_extra=request_body_schema(DrawTaskRequest),
@@ -30,17 +31,17 @@ def register_image_routes(
             return error_response(error, 400)
 
         try:
-            image_url = image_generation.generate_image(task_input)
+            image_filename = image_generation.generate_image(task_input)
         except (ImageGenerationError, ImageStorageError) as generation_error:
             return error_response(
                 str(generation_error),
                 generation_error.status_code,
             )
 
-        return JSONResponse({"image": image_url})
+        return JSONResponse({"image": generated_image_public_path(image_filename)})
 
-    @app.get(
-        f"{API_PREFIX}/generated-images/{{filename}}",
+    @router.get(
+        f"{GENERATED_IMAGES_PATH}/{{filename}}",
         tags=["Images"],
         response_model=None,
         response_class=FileResponse,
