@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 
 const defaultWorkerBaseUrl = "http://127.0.0.1:8766"
+const workerApiPrefix = "/v1"
 
 type ProxyOptions = {
   path: string
@@ -78,7 +79,19 @@ function resolveWorkerUrl(path: string) {
     process.env.AI_CANVAS_WORKER_URL || defaultWorkerBaseUrl
   ).replace(/\/+$/, "")
 
-  return `${baseUrl}${path}`
+  return `${withoutWorkerApiPrefix(baseUrl)}${withWorkerApiPrefix(path)}`
+}
+
+function withoutWorkerApiPrefix(baseUrl: string) {
+  return baseUrl.endsWith(workerApiPrefix)
+    ? baseUrl.slice(0, -workerApiPrefix.length)
+    : baseUrl
+}
+
+function withWorkerApiPrefix(path: string) {
+  return path.startsWith(`${workerApiPrefix}/`)
+    ? path
+    : `${workerApiPrefix}${path}`
 }
 
 function rewriteWorkerJson(body: string) {
@@ -116,6 +129,12 @@ function rewriteGeneratedImageUrls(value: unknown, key?: string): unknown {
 function toWebGeneratedImageUrl(value: string) {
   if (value.startsWith("/api/generated-images/")) {
     return value
+  }
+
+  if (value.startsWith(`${workerApiPrefix}/generated-images/`)) {
+    return `/api/generated-images/${value.slice(
+      `${workerApiPrefix}/generated-images/`.length
+    )}`
   }
 
   if (value.startsWith("/generated-images/")) {

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-GENERATED_IMAGE_ROUTE_PREFIX = "/generated-images/"
+GENERATED_IMAGE_ROUTE_PREFIX = "/v1/generated-images/"
 PNG_CONTENT_TYPE = "image/png"
 
 

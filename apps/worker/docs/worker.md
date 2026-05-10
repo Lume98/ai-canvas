@@ -107,7 +107,7 @@ Provider 配置存储在 SQLite 的 `provider_config` 表中：
 ### 健康检查
 
 ```http
-GET /health
+GET /v1/health
 ```
 
 响应：
@@ -121,7 +121,7 @@ GET /health
 ### Provider 配置
 
 ```http
-GET /provider-config
+GET /v1/provider-config
 ```
 
 响应：
@@ -138,7 +138,7 @@ GET /provider-config
 ```
 
 ```http
-POST /provider-config
+POST /v1/provider-config
 Content-Type: application/json
 
 {
@@ -155,7 +155,7 @@ Content-Type: application/json
 - 保存前会移除末尾 `/`。
 
 ```http
-DELETE /provider-config
+DELETE /v1/provider-config
 ```
 
 删除后返回默认配置。
@@ -163,7 +163,7 @@ DELETE /provider-config
 ### 创建绘图任务
 
 ```http
-POST /draw-tasks
+POST /v1/draw-tasks
 Content-Type: application/json
 
 {
@@ -209,13 +209,13 @@ Content-Type: application/json
 ### 查询任务
 
 ```http
-GET /draw-tasks
+GET /v1/draw-tasks
 ```
 
 返回最近 50 条任务，按创建时间倒序。
 
 ```http
-GET /draw-tasks/:taskId
+GET /v1/draw-tasks/:taskId
 ```
 
 任务不存在时返回 `404`。
@@ -223,7 +223,7 @@ GET /draw-tasks/:taskId
 ### 同步生成图片
 
 ```http
-POST /images/generate
+POST /v1/images/generate
 Content-Type: application/json
 
 {
@@ -238,14 +238,14 @@ Content-Type: application/json
 
 ```json
 {
-  "image": "/generated-images/hexfilename.png"
+  "image": "/v1/generated-images/hexfilename.png"
 }
 ```
 
 ### 读取生成图片
 
 ```http
-GET /generated-images/:filename
+GET /v1/generated-images/:filename
 ```
 
 只允许读取由 worker 生成的 PNG 文件名：
@@ -275,7 +275,7 @@ queued -> running -> succeeded
 
 - `queued`：任务已创建，等待 worker 领取。
 - `running`：worker 通过 `claim_next_task()` 原子领取任务。
-- `succeeded`：图片生成并保存成功，`resultUrl` 指向 `/generated-images/...png`。
+- `succeeded`：图片生成并保存成功，`resultUrl` 指向 `/v1/generated-images/...png`。
 - `failed`：生成或保存失败，`errorMessage` 保存错误信息。
 - `canceled`：保留状态，当前未被实际写入。
 
@@ -317,7 +317,7 @@ id INTEGER PRIMARY KEY CHECK (id = 1)
 图片以 PNG 保存到 `AI_CANVAS_GENERATED_IMAGES_DIR`。文件名由 `uuid4().hex` 生成，公开路径固定为：
 
 ```txt
-/generated-images/{filename}.png
+/v1/generated-images/{filename}.png
 ```
 
 ## 错误模型
@@ -338,14 +338,14 @@ id INTEGER PRIMARY KEY CHECK (id = 1)
 
 当前实现有几个需要主动管理的边界：
 
-- `GET /provider-config` 会返回完整 `apiKey`。这便于本地开发，但不适合暴露在不可信网络中；生产环境应只返回 `hasApiKey`、`baseUrl` 和 `updatedAt`。
+- `GET /v1/provider-config` 会返回完整 `apiKey`。这便于本地开发，但不适合暴露在不可信网络中；生产环境应只返回 `hasApiKey`、`baseUrl` 和 `updatedAt`。
 - `provider_config` 明文存储 API Key。长期应接入密钥管理或至少引入本机加密策略。
 - 后台 worker 是 `ThreadingHTTPServer` 内的 daemon thread。进程退出、崩溃或部署滚动时不会做任务恢复；`running` 任务也没有超时回收机制。
 - 失败任务不会自动重试。`attempts` 目前只记录领取次数，不驱动重试策略。
 - `progress` 没有中间态，前端不能基于它展示真实生成进度。
 - SQLite + 本地文件系统适合单机。如果多实例运行，任务领取、图片路径和配置一致性都需要重新建模。
 - `baseUrl` 只校验协议，不校验域名可信性；如果开放给多用户，会形成 SSRF 风险入口。
-- `/images/generate` 是同步接口，调用耗时受上游图像生成影响；面向用户请求时应优先使用 `/draw-tasks` 异步任务流。
+- `/v1/images/generate` 是同步接口，调用耗时受上游图像生成影响；面向用户请求时应优先使用 `/v1/draw-tasks` 异步任务流。
 
 ## 扩展方向
 

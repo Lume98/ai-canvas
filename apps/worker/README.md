@@ -19,6 +19,13 @@ AI_CANVAS_DATABASE_PATH=../../.data/ai-canvas.sqlite UV_CACHE_DIR=.uv-cache uv r
 
 The HTTP server defaults to `http://127.0.0.1:8766`.
 
+Swagger API docs are available after starting the server:
+
+```txt
+http://127.0.0.1:8766/docs
+http://127.0.0.1:8766/openapi.json
+```
+
 The worker is intentionally adapter-based:
 
 - Next.js creates and queries drawing tasks.
@@ -38,12 +45,14 @@ If `AI_CANVAS_GENERATED_IMAGES_DIR` is not set, images are stored next to the SQ
 ## HTTP API
 
 ```txt
-GET    /provider-config
-POST   /provider-config
-DELETE /provider-config
-POST   /images/generate
-GET    /generated-images/:filename
-GET    /draw-tasks
-POST   /draw-tasks
-GET    /draw-tasks/:taskId
+GET    /v1/provider-config
+POST   /v1/provider-config
+DELETE /v1/provider-config
+POST   /v1/images/generate
+GET    /v1/generated-images/:filename
+GET    /v1/draw-tasks
+POST   /v1/draw-tasks
+GET    /v1/draw-tasks/:taskId
 ```
+
+Swagger UI is served at `/docs` and `/swagger`; the OpenAPI document is served at `/openapi.json`.

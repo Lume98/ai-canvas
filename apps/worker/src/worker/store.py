@@ -2,8 +2,8 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
-from ai_canvas_worker.task import DrawTask, DrawTaskStatus
-from ai_canvas_worker.validation import DEFAULT_OPENAI_BASE_URL, ProviderConfigInput
+from .task import DrawTask, DrawTaskStatus
+from .validation import DEFAULT_OPENAI_BASE_URL, ProviderConfigInput
 
 
 class SQLiteDrawTaskStore:

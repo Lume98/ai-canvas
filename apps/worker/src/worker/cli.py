@@ -2,19 +2,19 @@ import argparse
 import time
 import uuid
 
-from ai_canvas_worker.config import (
+from .config import (
     resolve_database_path,
     resolve_generated_images_dir,
     resolve_worker_host,
     resolve_worker_port,
 )
-from ai_canvas_worker.image_storage import GeneratedImageStore
-from ai_canvas_worker.openai_images import generate_openai_image
-from ai_canvas_worker.runner import DrawTaskRunner
-from ai_canvas_worker.server import WorkerServer
-from ai_canvas_worker.store import SQLiteDrawTaskStore
-from ai_canvas_worker.task import DrawTask
-from ai_canvas_worker.validation import DrawTaskInput
+from .image_storage import GeneratedImageStore
+from .openai_images import generate_openai_image
+from .runner import DrawTaskRunner
+from .server import WorkerServer
+from .store import SQLiteDrawTaskStore
+from .task import DrawTask
+from .validation import DrawTaskInput
 
 
 def main() -> None:

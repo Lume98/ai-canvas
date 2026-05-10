@@ -1,6 +1,6 @@
 from collections.abc import Callable
 
-from ai_canvas_worker.task import DrawTask, DrawTaskResult, DrawTaskStatus
+from .task import DrawTask, DrawTaskResult, DrawTaskStatus
 
 
 DrawExecutor = Callable[[DrawTask], str]

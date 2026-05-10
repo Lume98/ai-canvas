@@ -4,7 +4,7 @@ import binascii
 from openai import APIConnectionError, APIStatusError, APITimeoutError, OpenAI
 from openai import OpenAIError as OpenAISDKError
 
-from ai_canvas_worker.validation import DEFAULT_OPENAI_BASE_URL, DrawTaskInput
+from .validation import DEFAULT_OPENAI_BASE_URL, DrawTaskInput
 
 
 class ImageGenerationError(Exception):
