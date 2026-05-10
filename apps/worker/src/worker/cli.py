@@ -1,7 +1,9 @@
 import argparse
 import time
-import uuid
+from argparse import Namespace
+from pathlib import Path
 
+from .app_services import WorkerRuntime, create_worker_runtime
 from .config import (
     resolve_database_path,
     resolve_generated_images_dir,
@@ -9,15 +11,13 @@ from .config import (
     resolve_worker_port,
 )
 from .image_storage import GeneratedImageStore
-from .openai_images import generate_openai_image
 from .runner import DrawTaskRunner
 from .server import WorkerServer
 from .store import SQLiteDrawTaskStore
-from .task import DrawTask
 from .validation import DrawTaskInput
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run the AI Canvas worker.")
     subcommands = parser.add_subparsers(dest="command", required=True)
 
@@ -39,62 +39,72 @@ def main() -> None:
     serve_parser.add_argument("--port", type=int, default=resolve_worker_port())
     serve_parser.add_argument("--no-worker", action="store_true")
 
-    args = parser.parse_args()
+    return parser
 
+
+def create_runtime() -> tuple[WorkerRuntime, Path]:
     database_path = resolve_database_path()
     image_store = GeneratedImageStore(resolve_generated_images_dir(database_path))
     store = SQLiteDrawTaskStore(database_path)
-    store.init_schema()
-    image_store.init_storage()
+    runtime = create_worker_runtime(store, image_store)
+
+    return runtime, database_path
+
+
+def main() -> None:
+    parser = build_parser()
+    args = parser.parse_args()
+    runtime, database_path = create_runtime()
+    runtime.initialize()
 
     if args.command == "init-db":
-        print(f"Initialized {database_path}")
-        print(f"Generated images directory: {resolve_generated_images_dir(database_path)}")
+        handle_init_db(database_path)
         return
 
     if args.command == "enqueue":
-        task = DrawTask(
-            id=args.task_id or str(uuid.uuid4()),
+        handle_enqueue(args, runtime)
+        return
+
+    if args.command == "serve":
+        handle_serve(args, runtime)
+        return
+
+    handle_work(args, runtime)
+
+
+def handle_init_db(database_path: Path) -> None:
+    print(f"Initialized {database_path}")
+    print(f"Generated images directory: {resolve_generated_images_dir(database_path)}")
+
+
+def handle_enqueue(args: Namespace, runtime: WorkerRuntime) -> None:
+    task = runtime.services.draw_tasks.create_task(
+        DrawTaskInput(
             prompt=args.prompt,
             model=args.model,
             size=args.size,
             quality=args.quality,
-        )
-        store.create_task(task)
-        print(task)
-        return
+        ),
+        task_id=args.task_id,
+    )
+    print(task)
 
-    if args.command == "serve":
-        WorkerServer(
-            host=args.host,
-            port=args.port,
-            store=store,
-            image_store=image_store,
-            run_background_worker=not args.no_worker,
-        ).serve_forever()
-        return
 
-    def generate_task_image(task: DrawTask) -> str:
-        provider_config = store.get_provider_config()
+def handle_serve(args: Namespace, runtime: WorkerRuntime) -> None:
+    WorkerServer.from_runtime(
+        host=args.host,
+        port=args.port,
+        runtime=runtime,
+        run_background_worker=not args.no_worker,
+    ).serve_forever()
 
-        image_bytes = generate_openai_image(
-            DrawTaskInput(
-                prompt=task.prompt,
-                model=task.model,
-                size=task.size,
-                quality=task.quality,
-            ),
-            provider_config["apiKey"],
-            provider_config["baseUrl"],
-        )
-        image = image_store.save_png(image_bytes)
 
-        return image.public_path
-
-    runner = DrawTaskRunner(executor=generate_task_image)
+def handle_work(args: Namespace, runtime: WorkerRuntime) -> None:
+    draw_tasks = runtime.services.draw_tasks
+    runner = DrawTaskRunner(executor=draw_tasks.generate_task_image)
 
     while True:
-        task = store.claim_next_task()
+        task = draw_tasks.claim_next_task()
 
         if task is None:
             if args.once:
@@ -107,9 +117,9 @@ def main() -> None:
         result = runner.run(task)
 
         if result.result_url:
-            store.mark_succeeded(task.id, result.result_url)
+            draw_tasks.mark_succeeded(task.id, result.result_url)
         else:
-            store.mark_failed(task.id, result.error_message or "Unknown worker error.")
+            draw_tasks.mark_failed(task.id, result.error_message or "Unknown worker error.")
 
         print(result)
 
