@@ -1,21 +1,27 @@
-# shadcn/ui monorepo template
+# AI Canvas Monorepo
 
-This is a Next.js monorepo template with shadcn/ui.
-
-## Adding components
-
-To add components to your app, run the following command at the root of your `web` app:
+## Startup Modes
 
 ```bash
-pnpm dlx shadcn@latest add button -c apps/web
+# Development: start web(next dev) + worker(uv serve) in parallel.
+pnpm dev
+
+# Production-style local run:
+# 1) build web
+# 2) start worker
+# 3) wait until worker /v1/health is ready
+# 4) start web(next start)
+pnpm build
+pnpm server
 ```
 
-This will place the ui components in the `packages/ui/src/components` directory.
+## Runtime Boundary
 
-## Using components
+- `apps/web`: Next.js UI + BFF API proxy (`/api/*` -> worker `/v1/*`).
+- `apps/worker`: Python worker (FastAPI + background task loop).
 
-To use the components in your app, import them from the `ui` package.
+## Notes
 
-```tsx
-import { Button } from "@workspace/ui/components/button";
-```
+- Worker default health URL: `http://127.0.0.1:8766/v1/health`.
+- `pnpm server` uses a startup gate script at `scripts/wait-worker-ready.mjs`.
+- Worker data defaults to `.data/ai-canvas.sqlite` and `.data/generated-images`.

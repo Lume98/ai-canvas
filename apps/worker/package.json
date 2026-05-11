@@ -3,10 +3,13 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dev": "AI_CANVAS_DATABASE_PATH=../../.data/ai-canvas.sqlite UV_CACHE_DIR=.uv-cache uv run ai-canvas-worker serve",
-    "server": "AI_CANVAS_DATABASE_PATH=../../.data/ai-canvas.sqlite UV_CACHE_DIR=.uv-cache uv run ai-canvas-worker serve",
-    "build": "UV_CACHE_DIR=.uv-cache uv run python -m compileall src",
-    "lint": "UV_CACHE_DIR=.uv-cache uv run python -m compileall src",
-    "typecheck": "UV_CACHE_DIR=.uv-cache uv run python -m compileall src"
+    "dev": "cross-env AI_CANVAS_DATABASE_PATH=../../.data/ai-canvas.sqlite UV_CACHE_DIR=.uv-cache uv run ai-canvas-worker serve",
+    "server": "cross-env AI_CANVAS_DATABASE_PATH=../../.data/ai-canvas.sqlite UV_CACHE_DIR=.uv-cache uv run ai-canvas-worker serve",
+    "build": "cross-env UV_CACHE_DIR=.uv-cache uv run python -m compileall src",
+    "lint": "cross-env UV_CACHE_DIR=.uv-cache uv run python -m compileall src",
+    "typecheck": "cross-env UV_CACHE_DIR=.uv-cache uv run python -m compileall src"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0"
   }
 }
