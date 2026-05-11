@@ -4,8 +4,12 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ValidationError
 
-from worker.validation import validate_draw_task_input, validate_provider_config_input
-from .schemas import DrawTaskRequest
+from worker.validation import (
+    validate_conversation_draw_task_input,
+    validate_draw_task_input,
+    validate_provider_config_input,
+)
+from .schemas import DrawTaskRequest, ImageGenerationRequest
 
 
 async def parse_request_model(
@@ -31,6 +35,9 @@ def extract_request_error_message(
     payload: dict[str, Any],
 ) -> str:
     if request_model is DrawTaskRequest:
+        return validate_conversation_draw_task_input(payload)[1] or "绘图任务参数无效。"
+
+    if request_model is ImageGenerationRequest:
         return validate_draw_task_input(payload)[1] or "绘图任务参数无效。"
 
     return validate_provider_config_input(payload)[1] or "Provider 配置无效。"

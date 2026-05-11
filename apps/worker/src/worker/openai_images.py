@@ -17,7 +17,7 @@ def generate_openai_image(
     task_input: DrawTaskInput,
     api_key: str,
     base_url: str | None,
-) -> bytes:
+) -> list[bytes]:
     if not api_key:
         raise ImageGenerationError("缺少 OpenAI API Key，请先在页面左侧配置。", 401)
 
@@ -30,7 +30,7 @@ def generate_openai_image(
         response = client.images.generate(
             model=task_input.model,
             prompt=task_input.prompt,
-            n=1,
+            n=task_input.output_count,
             size=task_input.size,
             quality=task_input.quality,
             output_format="png",
@@ -48,20 +48,28 @@ def generate_openai_image(
     except OpenAISDKError as error:
         raise ImageGenerationError(f"调用 OpenAI 图像接口失败：{error}") from error
 
-    image = response.data[0].b64_json if response.data else None
-
-    if not image:
+    if not response.data:
         raise ImageGenerationError("OpenAI 响应中没有图像数据。")
 
-    try:
-        image_bytes = base64.b64decode(image, validate=True)
-    except binascii.Error as error:
-        raise ImageGenerationError("OpenAI 响应中的图像数据不是有效 base64。") from error
+    images: list[bytes] = []
 
-    if not image_bytes.startswith(b"\x89PNG\r\n\x1a\n"):
-        raise ImageGenerationError("OpenAI 响应中的图像不是 PNG 格式。")
+    for item in response.data:
+        image = item.b64_json
 
-    return image_bytes
+        if not image:
+            raise ImageGenerationError("OpenAI 响应中没有图像数据。")
+
+        try:
+            image_bytes = base64.b64decode(image, validate=True)
+        except binascii.Error as error:
+            raise ImageGenerationError("OpenAI 响应中的图像数据不是有效 base64。") from error
+
+        if not image_bytes.startswith(b"\x89PNG\r\n\x1a\n"):
+            raise ImageGenerationError("OpenAI 响应中的图像不是 PNG 格式。")
+
+        images.append(image_bytes)
+
+    return images
 
 
 def resolve_base_url(base_url: str | None) -> str:

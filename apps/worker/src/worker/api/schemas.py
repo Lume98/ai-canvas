@@ -7,12 +7,13 @@ from worker.validation import (
     DEFAULT_OPENAI_BASE_URL,
     DrawTaskInput,
     ProviderConfigInput,
+    validate_conversation_draw_task_input,
     validate_draw_task_input,
     validate_provider_config_input,
 )
 
 
-class DrawTaskRequest(BaseModel):
+class ImageGenerationRequest(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
@@ -40,6 +41,28 @@ class DrawTaskRequest(BaseModel):
 
     def to_domain_input(self) -> tuple[DrawTaskInput | None, str | None]:
         return validate_draw_task_input(self.model_dump())
+
+
+class DrawTaskRequest(ImageGenerationRequest):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "conversationId": "conversation_123",
+                "prompt": "A quiet product photo",
+                "model": "gpt-image-2",
+                "size": "1024x1024",
+                "quality": "auto",
+                "outputCount": 1,
+            }
+        }
+    )
+
+    conversation_id: str = Field(min_length=1, alias="conversationId")
+    output_count: int = Field(default=1, alias="outputCount")
+    parent_asset_id: str | None = Field(default=None, alias="parentAssetId")
+
+    def to_domain_input(self) -> tuple[DrawTaskInput | None, str | None]:
+        return validate_conversation_draw_task_input(self.model_dump(by_alias=True))
 
 
 class ProviderConfigRequest(BaseModel):

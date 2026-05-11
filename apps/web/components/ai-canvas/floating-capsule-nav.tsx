@@ -1,32 +1,59 @@
 "use client"
 
 import { ReactNode, useEffect, useId, useState } from "react"
-import { History, ListChecks, LogOut, Settings, User, X } from "lucide-react"
+import {
+  History,
+  ListChecks,
+  LogOut,
+  MessageSquareQuote,
+  Settings,
+  User,
+  X,
+} from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
 
-import { AiProviderConfig } from "../ai-config"
-import { SettingsForm } from "../settings/settings-form"
-import { CanvasHistory } from "./canvas-history"
-import { ImageResult } from "./canvas-types"
+import { SettingsForm } from "@/components/settings/settings-form"
 
-type FloatingPanel = "profile" | "history" | "prompts" | null
+import { AiProviderConfig } from "./ai-config"
+import { CanvasHistory } from "./canvas-history"
+import { ConversationTimeline } from "./conversation-timeline"
+import { HistoryResult } from "./canvas-types"
+import { ConversationMessage, DrawTaskRecord, ImageAsset } from "./canvas-types"
+
+type FloatingPanel = "profile" | "conversation" | "history" | "prompts" | null
 
 type FloatingCapsuleNavProps = {
+  conversationMessages: ConversationMessage[]
+  isBusy: boolean
+  isConversationLoading: boolean
   prompts: string[]
-  results: ImageResult[]
+  results: HistoryResult[]
+  selectedMessageId: string | null
+  onAssetSelect: (asset: ImageAsset) => void
   onConfigChange: (config: AiProviderConfig) => void
+  onMessageSelect: (message: ConversationMessage) => void
   onPromptSelect: (prompt: string) => void
-  onResultSelect: (result: ImageResult) => void
+  onResultSelect: (result: HistoryResult) => void
+  onRetryTask: (task: DrawTaskRecord) => void
+  onUseTaskAsDraft: (task: DrawTaskRecord) => void
   userName?: string
 }
 
 export function FloatingCapsuleNav({
+  conversationMessages,
+  isBusy,
+  isConversationLoading,
   prompts,
   results,
+  selectedMessageId,
+  onAssetSelect,
   onConfigChange,
+  onMessageSelect,
   onPromptSelect,
   onResultSelect,
+  onRetryTask,
+  onUseTaskAsDraft,
   userName = "Canvas User",
 }: FloatingCapsuleNavProps) {
   const [activePanel, setActivePanel] = useState<FloatingPanel>(null)
@@ -79,6 +106,13 @@ export function FloatingCapsuleNav({
           <span className="flex size-8 items-center justify-center rounded-full bg-[oklch(0.22_0.04_245)] text-xs font-semibold text-white">
             {initial || <User className="size-4" />}
           </span>
+        </CapsuleButton>
+        <CapsuleButton
+          ariaLabel="当前会话"
+          isActive={activePanel === "conversation"}
+          onClick={() => togglePanel("conversation")}
+        >
+          <MessageSquareQuote className="size-5" />
         </CapsuleButton>
         <CapsuleButton
           ariaLabel="展示历史任务"
@@ -160,6 +194,35 @@ export function FloatingCapsuleNav({
                     {profileStatus}
                   </p>
                 ) : null}
+              </div>
+            ) : null}
+
+            {activePanel === "conversation" ? (
+              <div className="h-[min(520px,calc(100svh-152px))]">
+                <ConversationTimeline
+                  className="rounded-md border border-[oklch(0.82_0.02_245)]"
+                  isBusy={isBusy}
+                  isLoading={isConversationLoading}
+                  messages={conversationMessages}
+                  selectedMessageId={selectedMessageId}
+                  variant="panel"
+                  onAssetSelect={(asset) => {
+                    onAssetSelect(asset)
+                    setActivePanel(null)
+                  }}
+                  onMessageSelect={(message) => {
+                    onMessageSelect(message)
+                    setActivePanel(null)
+                  }}
+                  onRetryTask={(task) => {
+                    onRetryTask(task)
+                    setActivePanel(null)
+                  }}
+                  onUseTaskAsDraft={(task) => {
+                    onUseTaskAsDraft(task)
+                    setActivePanel(null)
+                  }}
+                />
               </div>
             ) : null}
 
@@ -266,6 +329,10 @@ const panelMeta = {
   profile: {
     eyebrow: "Profile",
     title: "用户头像",
+  },
+  conversation: {
+    eyebrow: "Conversation",
+    title: "当前会话",
   },
   history: {
     eyebrow: "History",

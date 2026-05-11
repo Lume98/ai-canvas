@@ -9,7 +9,7 @@ type ProxyOptions = {
   request?: Request
 }
 
-const generatedImageJsonKeys = new Set(["image", "resultUrl"])
+const generatedImageJsonKeys = new Set(["image", "resultUrl", "url"])
 
 export async function proxyWorkerRequest(options: ProxyOptions) {
   const headers = new Headers()

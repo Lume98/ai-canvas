@@ -5,13 +5,14 @@ import { ImageIcon, LoaderCircle } from "lucide-react"
 import Image from "next/image"
 
 import { CanvasDotGrid } from "./canvas-dot-grid"
-import { CanvasItem, ImageResult } from "./canvas-types"
+import { CanvasItem, ImageAsset } from "./canvas-types"
 
 const MIN_SCALE = 0.1
 const MAX_SCALE = 4
 const ZOOM_SENSITIVITY = 0.0015
 const GRID_SIZE = 22
 const AXIS_STEP = 500
+
 type ViewportTransform = {
   pan: {
     x: number
@@ -21,6 +22,7 @@ type ViewportTransform = {
 }
 
 type CanvasStageProps = {
+  assets: ImageAsset[]
   canvasItems: CanvasItem[]
   focusRequest: {
     centerX: number
@@ -28,32 +30,34 @@ type CanvasStageProps = {
     requestId: number
   } | null
   isGenerating: boolean
-  results: ImageResult[]
   selectedItemId: string | null
   onCanvasItemsChange: React.Dispatch<React.SetStateAction<CanvasItem[]>>
+  onAssetSelect?: (asset: ImageAsset) => void
   onSelectedItemChange: (itemId: string | null) => void
 }
 
 export function CanvasStage({
+  assets,
   canvasItems,
   focusRequest,
   isGenerating,
   onCanvasItemsChange,
+  onAssetSelect,
   onSelectedItemChange,
-  results,
   selectedItemId,
 }: CanvasStageProps) {
   return (
     <section className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="min-h-0 flex-1 overflow-hidden">
-        {results.length > 0 ? (
+        {assets.length > 0 ? (
           <InfiniteCanvas
+            assets={assets}
             canvasItems={canvasItems}
             focusRequest={focusRequest}
             isGenerating={isGenerating}
             onCanvasItemsChange={onCanvasItemsChange}
+            onAssetSelect={onAssetSelect}
             onSelectedItemChange={onSelectedItemChange}
-            results={results}
             selectedItemId={selectedItemId}
           />
         ) : (
@@ -65,14 +69,16 @@ export function CanvasStage({
 }
 
 function InfiniteCanvas({
+  assets,
   canvasItems,
   focusRequest,
   isGenerating,
   onCanvasItemsChange,
+  onAssetSelect,
   onSelectedItemChange,
-  results,
   selectedItemId,
 }: {
+  assets: ImageAsset[]
   canvasItems: CanvasItem[]
   focusRequest: {
     centerX: number
@@ -81,11 +87,11 @@ function InfiniteCanvas({
   } | null
   isGenerating: boolean
   onCanvasItemsChange: React.Dispatch<React.SetStateAction<CanvasItem[]>>
+  onAssetSelect?: (asset: ImageAsset) => void
   onSelectedItemChange: (itemId: string | null) => void
-  results: ImageResult[]
   selectedItemId: string | null
 }) {
-  const resultsById = new Map(results.map((result) => [result.id, result]))
+  const assetsById = new Map(assets.map((asset) => [asset.id, asset]))
   const dragStartRef = useRef({
     pointerId: -1,
     x: 0,
@@ -187,8 +193,10 @@ function InfiniteCanvas({
           item.id === dragStart.itemId
             ? {
                 ...item,
-                x: dragStart.itemX + (event.clientX - dragStart.x) / viewport.scale,
-                y: dragStart.itemY + (event.clientY - dragStart.y) / viewport.scale,
+                x:
+                  dragStart.itemX + (event.clientX - dragStart.x) / viewport.scale,
+                y:
+                  dragStart.itemY + (event.clientY - dragStart.y) / viewport.scale,
               }
             : item,
         ),
@@ -313,9 +321,9 @@ function InfiniteCanvas({
         }}
       >
         {canvasItems.map((item) => {
-          const result = resultsById.get(item.resultId)
+          const asset = assetsById.get(item.assetId)
 
-          if (!result) return null
+          if (!asset || !asset.url) return null
 
           return (
             <CanvasImageItem
@@ -323,7 +331,8 @@ function InfiniteCanvas({
               isSelected={selectedItemId === item.id}
               item={item}
               key={item.id}
-              result={result}
+              asset={asset}
+              onAssetSelect={onAssetSelect}
               onPointerDown={handleItemPointerDown}
             />
           )
@@ -344,7 +353,8 @@ function CanvasImageItem({
   isSelected,
   item,
   onPointerDown,
-  result,
+  onAssetSelect,
+  asset,
 }: {
   isDragging: boolean
   isSelected: boolean
@@ -353,7 +363,8 @@ function CanvasImageItem({
     event: React.PointerEvent<HTMLDivElement>,
     item: CanvasItem,
   ) => void
-  result: ImageResult
+  onAssetSelect?: (asset: ImageAsset) => void
+  asset: ImageAsset
 }) {
   return (
     <div
@@ -370,14 +381,15 @@ function CanvasImageItem({
         height: item.height,
         transform: `translate3d(${item.x}px, ${item.y}px, 0)`,
       }}
+      onDoubleClick={() => onAssetSelect?.(asset)}
     >
       <Image
         className="pointer-events-none object-contain"
         fill
         draggable={false}
         unoptimized
-        src={result.url}
-        alt={result.prompt}
+        src={asset.url || ""}
+        alt=""
       />
     </div>
   )

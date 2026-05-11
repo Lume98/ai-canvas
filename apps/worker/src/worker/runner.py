@@ -1,9 +1,9 @@
 from collections.abc import Callable
 
-from .task import DrawTask, DrawTaskResult, DrawTaskStatus
+from .task import DrawTask, DrawTaskResult, DrawTaskStatus, GeneratedImage
 
 
-DrawExecutor = Callable[[DrawTask], str]
+DrawExecutor = Callable[[DrawTask], tuple[GeneratedImage, ...]]
 
 
 class DrawTaskRunner:
@@ -12,7 +12,7 @@ class DrawTaskRunner:
 
     def run(self, task: DrawTask) -> DrawTaskResult:
         try:
-            result_filename = self._executor(task)
+            images = self._executor(task)
         except Exception as error:
             return DrawTaskResult(
                 task_id=task.id,
@@ -23,5 +23,5 @@ class DrawTaskRunner:
         return DrawTaskResult(
             task_id=task.id,
             status=DrawTaskStatus.SUCCEEDED,
-            result_filename=result_filename,
+            images=images,
         )

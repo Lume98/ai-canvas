@@ -14,12 +14,37 @@ class DrawTaskInput:
     model: str
     size: str
     quality: str
+    output_count: int = 1
+    conversation_id: str | None = None
+    parent_asset_id: str | None = None
 
 
 @dataclass(frozen=True)
 class ProviderConfigInput:
     api_key: str
     base_url: str
+
+
+def validate_conversation_id(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+
+    conversation_id = value.strip()
+
+    return conversation_id or None
+
+
+def validate_output_count(value: Any) -> tuple[int | None, str | None]:
+    if value is None:
+        return 1, None
+
+    if isinstance(value, bool) or not isinstance(value, int):
+        return None, "输出图片数量无效。"
+
+    if value < 1 or value > 4:
+        return None, "输出图片数量仅支持 1 到 4。"
+
+    return value, None
 
 
 def validate_draw_task_input(payload: Any) -> tuple[DrawTaskInput | None, str | None]:
@@ -49,6 +74,45 @@ def validate_draw_task_input(payload: Any) -> tuple[DrawTaskInput | None, str | 
         return None, "不支持的图像质量。"
 
     return DrawTaskInput(prompt=prompt, model=model, size=size, quality=quality), None
+
+
+def validate_conversation_draw_task_input(
+    payload: Any,
+) -> tuple[DrawTaskInput | None, str | None]:
+    task_input, error = validate_draw_task_input(payload)
+
+    if error or task_input is None:
+        return None, error
+
+    conversation_id = validate_conversation_id(payload.get("conversationId"))
+
+    if not conversation_id:
+        return None, "conversationId 不能为空。"
+
+    output_count, output_count_error = validate_output_count(payload.get("outputCount"))
+
+    if output_count_error or output_count is None:
+        return None, output_count_error
+
+    parent_asset_id = payload.get("parentAssetId")
+    normalized_parent_asset_id = (
+        parent_asset_id.strip()
+        if isinstance(parent_asset_id, str) and parent_asset_id.strip()
+        else None
+    )
+
+    return (
+        DrawTaskInput(
+            prompt=task_input.prompt,
+            model=task_input.model,
+            size=task_input.size,
+            quality=task_input.quality,
+            output_count=output_count,
+            conversation_id=conversation_id,
+            parent_asset_id=normalized_parent_asset_id,
+        ),
+        None,
+    )
 
 
 def validate_provider_config_input(

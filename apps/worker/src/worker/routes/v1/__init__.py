@@ -2,8 +2,10 @@ from fastapi import APIRouter, FastAPI
 
 from worker.services import DrawTaskService, ImageGenerationService, ProviderConfigService
 
+from .conversations import register_conversation_routes
 from .draw_tasks import register_draw_task_routes
 from .images import register_image_routes
+from .messages import register_message_routes
 from .paths import V1_PREFIX
 from .provider_config import register_provider_config_routes
 from .system import register_system_routes, register_swagger_route
@@ -19,6 +21,8 @@ def register_v1_routes(
 
     register_system_routes(router)
     register_provider_config_routes(router, provider_config)
+    register_conversation_routes(router, draw_tasks)
+    register_message_routes(router, draw_tasks)
     register_draw_task_routes(router, draw_tasks)
     register_image_routes(router, image_generation)
 

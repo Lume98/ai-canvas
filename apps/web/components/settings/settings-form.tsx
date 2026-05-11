@@ -12,7 +12,7 @@ import {
   defaultOpenAIBaseUrl,
   readAiProviderConfig,
   writeAiProviderConfig,
-} from "../ai-config"
+} from "@/components/ai-canvas/ai-config"
 
 const inputClass =
   "w-full rounded-md border border-[oklch(0.74_0.035_75)] bg-white/80 px-3 py-2 text-sm shadow-sm outline-none transition placeholder:text-[oklch(0.56_0.025_245)] focus:border-[oklch(0.49_0.12_168)] focus:ring-3 focus:ring-[oklch(0.72_0.11_168_/_0.28)]"

@@ -78,12 +78,14 @@ def handle_init_db(database_path: Path) -> None:
 
 
 def handle_enqueue(args: Namespace, runtime: WorkerRuntime) -> None:
+    conversation = runtime.services.draw_tasks.create_conversation("CLI Enqueued Tasks")
     task = runtime.services.draw_tasks.create_task(
         DrawTaskInput(
             prompt=args.prompt,
             model=args.model,
             size=args.size,
             quality=args.quality,
+            conversation_id=conversation["id"],
         ),
         task_id=args.task_id,
     )
@@ -116,8 +118,8 @@ def handle_work(args: Namespace, runtime: WorkerRuntime) -> None:
 
         result = runner.run(task)
 
-        if result.result_filename:
-            draw_tasks.mark_succeeded(task.id, result.result_filename)
+        if result.images:
+            draw_tasks.mark_succeeded(task.id, result.images)
         else:
             draw_tasks.mark_failed(task.id, result.error_message or "Unknown worker error.")
 

@@ -1,10 +1,10 @@
 import Image from "next/image"
 
-import { ImageResult } from "./canvas-types"
+import { HistoryResult } from "./canvas-types"
 
 type CanvasHistoryProps = {
-  results: ImageResult[]
-  onSelectResult: (result: ImageResult) => void
+  results: HistoryResult[]
+  onSelectResult: (result: HistoryResult) => void
 }
 
 export function CanvasHistory({

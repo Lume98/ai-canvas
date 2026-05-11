@@ -60,6 +60,7 @@ export function PromptComposer({
         <PromptInputBody>
           <PromptInputTextarea
             aria-label="提示词"
+            autoFocus
             className="min-h-32 px-3 pt-3 pb-2 text-sm leading-6"
             onChange={(event) => onPromptChange(event.currentTarget.value)}
             placeholder="描述你想生成的画面、风格、构图、光线和用途。"
@@ -134,7 +135,6 @@ export function PromptComposer({
           {error}
         </div>
       ) : null}
-
     </div>
   )
 }

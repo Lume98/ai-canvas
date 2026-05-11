@@ -4,8 +4,10 @@ import { useEffect, useId, useState } from "react"
 import { LogOut, Settings, User, X } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
-import { AiProviderConfig } from "../ai-config"
-import { SettingsForm } from "../settings/settings-form"
+
+import { SettingsForm } from "@/components/settings/settings-form"
+
+import { AiProviderConfig } from "./ai-config"
 
 type SidebarProfileProps = {
   onConfigChange?: (config: AiProviderConfig) => void

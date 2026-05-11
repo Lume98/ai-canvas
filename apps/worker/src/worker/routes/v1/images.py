@@ -2,7 +2,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import FileResponse, JSONResponse, Response
 
 from worker.api import error_response, parse_request_model, request_body_schema
-from worker.api.schemas import DrawTaskRequest
+from worker.api.schemas import ImageGenerationRequest
 from worker.image_storage import PNG_CONTENT_TYPE
 from worker.services import ImageGenerationError, ImageGenerationService, ImageStorageError
 
@@ -17,10 +17,10 @@ def register_image_routes(
         "/images/generate",
         tags=["Images"],
         response_model=None,
-        openapi_extra=request_body_schema(DrawTaskRequest),
+        openapi_extra=request_body_schema(ImageGenerationRequest),
     )
     async def generate_image(request: Request) -> Response:
-        payload = await parse_request_model(request, DrawTaskRequest)
+        payload = await parse_request_model(request, ImageGenerationRequest)
 
         if isinstance(payload, JSONResponse):
             return payload

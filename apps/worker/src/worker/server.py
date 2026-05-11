@@ -97,8 +97,8 @@ class WorkerServer:
 
             result = runner.run(task)
 
-            if result.result_filename:
-                draw_tasks.mark_succeeded(task.id, result.result_filename)
+            if result.images:
+                draw_tasks.mark_succeeded(task.id, result.images)
             else:
                 draw_tasks.mark_failed(
                     task.id,
