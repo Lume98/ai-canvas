@@ -1,12 +1,23 @@
-import { FormEvent, ReactNode } from "react"
+import { FormEvent, useState } from "react"
 import { LoaderCircle, Sparkles } from "lucide-react"
 
-import { Button } from "@workspace/ui/components/button"
+import {
+  PromptInput,
+  PromptInputBody,
+  PromptInputFooter,
+  PromptInputSelect,
+  PromptInputSelectContent,
+  PromptInputSelectItem,
+  PromptInputSelectTrigger,
+  PromptInputSelectValue,
+  PromptInputSubmit,
+  PromptInputTextarea,
+  PromptInputTools,
+} from "@/components/ai-elements/prompt-input"
 
 import { models, qualities, sizes } from "./canvas-types"
 
-const controlSelectClass =
-  "w-full rounded-md border border-[oklch(0.74_0.035_75)] bg-white/80 px-3 py-2 text-sm shadow-sm outline-none transition focus:border-[oklch(0.49_0.12_168)] focus:ring-3 focus:ring-[oklch(0.72_0.11_168_/_0.28)]"
+type ParameterSelectName = "model" | "size" | "quality"
 
 type PromptComposerProps = {
   canGenerate: boolean
@@ -37,72 +48,73 @@ export function PromptComposer({
   onSizeChange,
   onSubmit,
 }: PromptComposerProps) {
+  const [openSelect, setOpenSelect] = useState<ParameterSelectName | null>(null)
+
   return (
-    <form
-      className="pointer-events-auto mx-auto w-full max-w-3xl rounded-t-xl border border-b-0 border-[oklch(0.78_0.028_75)] bg-[oklch(0.965_0.018_88)]/95 p-4 shadow-[0_-16px_45px_oklch(0.55_0.05_245_/_0.12)] backdrop-blur"
-      onSubmit={onSubmit}
-    >
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <Control label="模型">
-          <select
-            className={controlSelectClass}
-            value={model}
-            onChange={(event) => onModelChange(event.target.value)}
-          >
-            {models.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
-              </option>
-            ))}
-          </select>
-        </Control>
-
-        <Control label="尺寸">
-          <select
-            className={controlSelectClass}
-            value={size}
-            onChange={(event) => onSizeChange(event.target.value)}
-          >
-            {sizes.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </Control>
-
-        <Control label="质量">
-          <select
-            className={controlSelectClass}
-            value={quality}
-            onChange={(event) => onQualityChange(event.target.value)}
-          >
-            {qualities.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </Control>
-      </div>
-
-      <label className="mt-4 block">
-        <span className="sr-only">提示词</span>
-        <div className="relative">
-          <textarea
-            className="min-h-32 w-full resize-none rounded-md border border-[oklch(0.74_0.035_75)] bg-white/85 px-3 pt-3 pr-3 pb-16 text-sm leading-6 shadow-sm transition outline-none focus:border-[oklch(0.49_0.12_168)] focus:ring-3 focus:ring-[oklch(0.72_0.11_168_/_0.28)]"
-            value={prompt}
-            maxLength={2400}
-            onChange={(event) => onPromptChange(event.target.value)}
+    <div className="pointer-events-auto mx-auto w-full max-w-3xl">
+      <PromptInput
+        attachmentsDisabled
+        className="rounded-md bg-white/90 shadow-[0_18px_45px_oklch(0.55_0.05_245_/_0.14)] backdrop-blur"
+        onSubmit={(_, event) => onSubmit(event)}
+      >
+        <PromptInputBody>
+          <PromptInputTextarea
+            aria-label="提示词"
+            className="min-h-32 px-3 pt-3 pb-2 text-sm leading-6"
+            onChange={(event) => onPromptChange(event.currentTarget.value)}
             placeholder="描述你想生成的画面、风格、构图、光线和用途。"
+            value={prompt}
           />
-          <span className="absolute bottom-4 left-3 text-xs text-[oklch(0.45_0.025_245)]">
-            {prompt.length}/2400
-          </span>
-          <Button
-            className="absolute right-3 bottom-3 h-10 bg-[oklch(0.22_0.04_245)] px-4 text-white shadow-sm hover:bg-[oklch(0.29_0.05_245)]"
+        </PromptInputBody>
+        <PromptInputFooter className="flex-wrap items-end px-3 pb-3">
+          <PromptInputTools className="flex-wrap gap-2">
+            <ParameterSelect
+              label="模型"
+              name="model"
+              open={openSelect === "model"}
+              value={model}
+              onOpenChange={(isOpen) => setOpenSelect(isOpen ? "model" : null)}
+              onValueChange={onModelChange}
+            >
+              {models.map((item) => (
+                <PromptInputSelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </PromptInputSelectItem>
+              ))}
+            </ParameterSelect>
+            <ParameterSelect
+              label="尺寸"
+              name="size"
+              open={openSelect === "size"}
+              value={size}
+              onOpenChange={(isOpen) => setOpenSelect(isOpen ? "size" : null)}
+              onValueChange={onSizeChange}
+            >
+              {sizes.map((item) => (
+                <PromptInputSelectItem key={item} value={item}>
+                  {item}
+                </PromptInputSelectItem>
+              ))}
+            </ParameterSelect>
+            <ParameterSelect
+              label="质量"
+              name="quality"
+              open={openSelect === "quality"}
+              value={quality}
+              onOpenChange={(isOpen) => setOpenSelect(isOpen ? "quality" : null)}
+              onValueChange={onQualityChange}
+            >
+              {qualities.map((item) => (
+                <PromptInputSelectItem key={item} value={item}>
+                  {item}
+                </PromptInputSelectItem>
+              ))}
+            </ParameterSelect>
+          </PromptInputTools>
+          <PromptInputSubmit
+            className="h-10 rounded-md bg-[oklch(0.22_0.04_245)] px-4 text-white shadow-sm hover:bg-[oklch(0.29_0.05_245)]"
             disabled={!canGenerate}
-            type="submit"
+            size="sm"
           >
             {isGenerating ? (
               <LoaderCircle className="size-4 animate-spin" />
@@ -110,9 +122,9 @@ export function PromptComposer({
               <Sparkles className="size-4" />
             )}
             生成图像
-          </Button>
-        </div>
-      </label>
+          </PromptInputSubmit>
+        </PromptInputFooter>
+      </PromptInput>
 
       {error ? (
         <div className="mt-3 rounded-md border border-[oklch(0.67_0.18_28)] bg-[oklch(0.96_0.03_28)] px-3 py-2 text-sm text-[oklch(0.38_0.14_28)]">
@@ -120,15 +132,46 @@ export function PromptComposer({
         </div>
       ) : null}
 
-    </form>
+    </div>
   )
 }
 
-function Control({ children, label }: { children: ReactNode; label: string }) {
+function ParameterSelect({
+  children,
+  label,
+  name,
+  onOpenChange,
+  onValueChange,
+  open,
+  value,
+}: {
+  children: React.ReactNode
+  label: string
+  name: ParameterSelectName
+  onOpenChange: (open: boolean) => void
+  onValueChange: (value: string) => void
+  open: boolean
+  value: string
+}) {
   return (
-    <label className="block">
-      <span className="text-sm font-medium">{label}</span>
-      <div className="mt-2">{children}</div>
-    </label>
+    <PromptInputSelect
+      open={open}
+      value={value}
+      onOpenChange={onOpenChange}
+      onValueChange={(nextValue) => {
+        onValueChange(nextValue)
+        onOpenChange(false)
+      }}
+    >
+      <PromptInputSelectTrigger
+        aria-label={label}
+        data-select-name={name}
+        className="h-8 max-w-36 min-w-24 border border-[oklch(0.74_0.035_75)] bg-white/80 text-[oklch(0.17_0.018_245)] shadow-sm"
+      >
+        <span className="text-xs text-[oklch(0.45_0.025_245)]">{label}</span>
+        <PromptInputSelectValue />
+      </PromptInputSelectTrigger>
+      <PromptInputSelectContent>{children}</PromptInputSelectContent>
+    </PromptInputSelect>
   )
 }

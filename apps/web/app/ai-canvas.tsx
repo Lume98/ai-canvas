@@ -138,7 +138,7 @@ export function AiCanvas() {
             isGenerating={isGenerating}
           />
 
-          <div className="pointer-events-none absolute right-4 bottom-0 left-4 z-30">
+          <div className="pointer-events-none absolute right-4 bottom-6 left-4 z-30 sm:bottom-8">
             <PromptComposer
               canGenerate={canGenerate}
               error={error}
