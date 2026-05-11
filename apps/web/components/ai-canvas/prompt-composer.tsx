@@ -51,24 +51,24 @@ export function PromptComposer({
   const [openSelect, setOpenSelect] = useState<ParameterSelectName | null>(null)
 
   return (
-    <div className="pointer-events-auto mx-auto w-full max-w-3xl">
+    <div className="pointer-events-auto mx-auto w-full max-w-2xl xl:max-w-[44rem]">
       <PromptInput
         attachmentsDisabled
-        className="rounded-md bg-white/90 shadow-[0_18px_45px_oklch(0.55_0.05_245_/_0.14)] backdrop-blur"
+        className="rounded-xl border border-white/55 bg-white/84 shadow-[0_18px_45px_oklch(0.55_0.05_245_/_0.12)] backdrop-blur"
         onSubmit={(_, event) => onSubmit(event)}
       >
         <PromptInputBody>
           <PromptInputTextarea
             aria-label="提示词"
             autoFocus
-            className="min-h-32 px-3 pt-3 pb-2 text-sm leading-6"
+            className="min-h-24 px-3 pt-3 pb-2 text-sm leading-6 sm:min-h-28"
             onChange={(event) => onPromptChange(event.currentTarget.value)}
             placeholder="描述你想生成的画面、风格、构图、光线和用途。"
             value={prompt}
           />
         </PromptInputBody>
-        <PromptInputFooter className="flex-wrap items-end px-3 pb-3">
-          <PromptInputTools className="flex-wrap gap-2">
+        <PromptInputFooter className="flex-wrap items-end gap-2 px-3 pb-3 pt-1">
+          <PromptInputTools className="flex-wrap gap-1.5">
             <ParameterSelect
               icon={WandSparkles}
               label="模型"
@@ -171,11 +171,11 @@ function ParameterSelect({
       <PromptInputSelectTrigger
         aria-label={label}
         data-select-name={name}
-        className="h-8 max-w-36 min-w-24 border border-[oklch(0.74_0.035_75)] bg-white/80 text-[oklch(0.17_0.018_245)] shadow-sm"
+        className="h-7 max-w-32 min-w-20 border border-[oklch(0.74_0.035_75)] bg-white/78 px-2 text-[11px] text-[oklch(0.17_0.018_245)] shadow-sm sm:h-8 sm:min-w-24 sm:text-xs"
       >
         <Icon
           aria-hidden="true"
-          className="size-3.5 text-[oklch(0.45_0.025_245)]"
+          className="size-3 text-[oklch(0.45_0.025_245)] sm:size-3.5"
         />
         <PromptInputSelectValue />
       </PromptInputSelectTrigger>

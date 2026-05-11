@@ -95,7 +95,7 @@ export function FloatingCapsuleNav({
   return (
     <>
       <nav
-        className="fixed top-1/2 left-3 z-40 flex -translate-y-1/2 flex-col items-center gap-2 rounded-full border border-[oklch(0.78_0.028_75)] bg-white/86 p-2 shadow-[0_18px_45px_oklch(0.35_0.04_245_/_0.18)] backdrop-blur md:left-5"
+        className="fixed top-1/2 left-2.5 z-40 flex -translate-y-1/2 flex-col items-center gap-1.5 rounded-full border border-[oklch(0.78_0.028_75)] bg-white/82 px-1.5 py-2 shadow-[0_14px_34px_oklch(0.35_0.04_245_/_0.16)] backdrop-blur md:left-4"
         aria-label="画布快捷入口"
       >
         <CapsuleButton
@@ -103,7 +103,7 @@ export function FloatingCapsuleNav({
           isActive={activePanel === "profile"}
           onClick={() => togglePanel("profile")}
         >
-          <span className="flex size-8 items-center justify-center rounded-full bg-[oklch(0.22_0.04_245)] text-xs font-semibold text-white">
+          <span className="flex size-7 items-center justify-center rounded-full bg-[oklch(0.22_0.04_245)] text-[10px] font-semibold text-white">
             {initial || <User className="size-4" />}
           </span>
         </CapsuleButton>
@@ -131,7 +131,7 @@ export function FloatingCapsuleNav({
       </nav>
 
       {activePanel ? (
-        <aside className="fixed top-1/2 left-[76px] z-40 flex max-h-[min(560px,calc(100svh-32px))] w-[min(330px,calc(100vw-92px))] -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-[oklch(0.78_0.028_75)] bg-[oklch(0.965_0.018_88)] shadow-2xl md:left-[92px]">
+        <aside className="fixed top-1/2 left-[60px] z-40 flex max-h-[min(560px,calc(100svh-32px))] w-[min(330px,calc(100vw-76px))] -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-[oklch(0.78_0.028_75)] bg-[oklch(0.965_0.018_88)] shadow-2xl md:left-[74px]">
           <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[oklch(0.83_0.025_75)] bg-white/70 px-4 py-3">
             <div>
               <p className="text-xs font-medium tracking-[0.14em] text-[oklch(0.46_0.08_168)] uppercase">
@@ -314,7 +314,7 @@ function CapsuleButton({
 }) {
   return (
     <button
-      className="flex size-11 items-center justify-center rounded-full text-[oklch(0.28_0.025_245)] transition hover:bg-[oklch(0.91_0.035_88)] aria-expanded:bg-[oklch(0.22_0.04_245)] aria-expanded:text-white"
+      className="flex size-9 items-center justify-center rounded-full text-[oklch(0.28_0.025_245)] transition hover:bg-[oklch(0.91_0.035_88)] aria-expanded:bg-[oklch(0.22_0.04_245)] aria-expanded:text-white md:size-10"
       type="button"
       aria-label={ariaLabel}
       aria-expanded={isActive}

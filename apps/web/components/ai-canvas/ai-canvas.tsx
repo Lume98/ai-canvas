@@ -514,7 +514,7 @@ export function AiCanvas() {
           onSelectedItemChange={setSelectedItemId}
         />
 
-        <div className="pointer-events-none absolute right-4 bottom-6 left-4 z-30 xl:left-8 sm:bottom-8">
+        <div className="pointer-events-none absolute inset-x-3 bottom-4 z-30 sm:inset-x-6 sm:bottom-6 xl:left-20 xl:right-8">
           <PromptComposer
             canGenerate={canGenerate}
             error={error}
