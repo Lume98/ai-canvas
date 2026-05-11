@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react"
-import { LoaderCircle, Sparkles } from "lucide-react"
+import { Box, Gauge, LoaderCircle, Sparkles, WandSparkles } from "lucide-react"
 
 import {
   PromptInput,
@@ -69,6 +69,7 @@ export function PromptComposer({
         <PromptInputFooter className="flex-wrap items-end px-3 pb-3">
           <PromptInputTools className="flex-wrap gap-2">
             <ParameterSelect
+              icon={WandSparkles}
               label="模型"
               name="model"
               open={openSelect === "model"}
@@ -83,6 +84,7 @@ export function PromptComposer({
               ))}
             </ParameterSelect>
             <ParameterSelect
+              icon={Box}
               label="尺寸"
               name="size"
               open={openSelect === "size"}
@@ -97,6 +99,7 @@ export function PromptComposer({
               ))}
             </ParameterSelect>
             <ParameterSelect
+              icon={Gauge}
               label="质量"
               name="quality"
               open={openSelect === "quality"}
@@ -138,6 +141,7 @@ export function PromptComposer({
 
 function ParameterSelect({
   children,
+  icon: Icon,
   label,
   name,
   onOpenChange,
@@ -146,6 +150,7 @@ function ParameterSelect({
   value,
 }: {
   children: React.ReactNode
+  icon: React.ComponentType<{ className?: string }>
   label: string
   name: ParameterSelectName
   onOpenChange: (open: boolean) => void
@@ -168,7 +173,10 @@ function ParameterSelect({
         data-select-name={name}
         className="h-8 max-w-36 min-w-24 border border-[oklch(0.74_0.035_75)] bg-white/80 text-[oklch(0.17_0.018_245)] shadow-sm"
       >
-        <span className="text-xs text-[oklch(0.45_0.025_245)]">{label}</span>
+        <Icon
+          aria-hidden="true"
+          className="size-3.5 text-[oklch(0.45_0.025_245)]"
+        />
         <PromptInputSelectValue />
       </PromptInputSelectTrigger>
       <PromptInputSelectContent>{children}</PromptInputSelectContent>

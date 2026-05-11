@@ -7,6 +7,15 @@ export type ImageResult = {
   quality: string
 }
 
+export type CanvasItem = {
+  id: string
+  resultId: string
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
 export const models = [
   { value: "gpt-image-2", label: "GPT Image 2" },
   { value: "gpt-image-1.5", label: "GPT Image 1.5" },
