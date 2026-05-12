@@ -1,27 +1,28 @@
 "use client"
 
-import { ReactNode, useEffect, useId, useState } from "react"
-import {
-  History,
-  ListChecks,
-  LogOut,
-  MessageSquareQuote,
-  Settings,
-  User,
-  X,
-} from "lucide-react"
-
-import { Button } from "@workspace/ui/components/button"
-
-import { SettingsForm } from "@/components/settings/settings-form"
+import { type RefObject, useEffect, useId, useRef, useState } from "react"
+import { cn } from "@workspace/ui/lib/utils"
 
 import { AiProviderConfig } from "./ai-config"
-import { CanvasHistory } from "./canvas-history"
-import { ConversationTimeline } from "./conversation-timeline"
+import { FloatingCapsuleNavButton } from "./floating-capsule-nav-button"
+import { useCapsuleNavFootprint } from "./floating-capsule-nav-layout"
+import {
+  FloatingCapsulePanel,
+  type FloatingPanelKey,
+  useFloatingCapsulePanels,
+} from "./floating-capsule-nav-panels"
+import { FloatingCapsuleSettingsDialog } from "./floating-capsule-settings-dialog"
+import { aiCanvasCapsuleRailPositionClassName } from "./layout-tokens"
 import { HistoryResult } from "./canvas-types"
 import { ConversationMessage, DrawTaskRecord, ImageAsset } from "./canvas-types"
 
-type FloatingPanel = "profile" | "conversation" | "history" | "prompts" | null
+type FloatingPanel = FloatingPanelKey | null
+
+const capsuleRailClassName =
+  "pointer-events-none fixed top-1/2 z-40 flex -translate-y-1/2 items-center"
+
+const capsuleNavClassName =
+  "pointer-events-auto relative flex flex-col items-center gap-2 rounded-[28px] border border-white/70 bg-[linear-gradient(180deg,oklch(0.995_0.006_95_/0.94)_0%,oklch(0.955_0.02_88_/0.9)_100%)] p-2 shadow-[0_20px_54px_oklch(0.22_0.03_245_/_0.18)] ring-1 ring-[oklch(0.84_0.02_88_/_0.65)] backdrop-blur-xl"
 
 type FloatingCapsuleNavProps = {
   conversationMessages: ConversationMessage[]
@@ -37,6 +38,7 @@ type FloatingCapsuleNavProps = {
   onResultSelect: (result: HistoryResult) => void
   onRetryTask: (task: DrawTaskRecord) => void
   onUseTaskAsDraft: (task: DrawTaskRecord) => void
+  layoutRootRef: RefObject<HTMLElement | null>
   userName?: string
 }
 
@@ -49,6 +51,7 @@ export function FloatingCapsuleNav({
   selectedMessageId,
   onAssetSelect,
   onConfigChange,
+  layoutRootRef,
   onMessageSelect,
   onPromptSelect,
   onResultSelect,
@@ -59,8 +62,49 @@ export function FloatingCapsuleNav({
   const [activePanel, setActivePanel] = useState<FloatingPanel>(null)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [profileStatus, setProfileStatus] = useState("")
+  const navRef = useRef<HTMLElement | null>(null)
   const settingsTitleId = useId()
   const initial = userName.trim().charAt(0).toUpperCase() || "C"
+  const { leadingPanels, mainPanels, panelRegistry } =
+    useFloatingCapsulePanels({
+      conversationMessages,
+      initial,
+      isBusy,
+      isConversationLoading,
+      onAssetSelect,
+      onMessageSelect,
+      onOpenSettings: () => {
+        setIsSettingsOpen(true)
+        setActivePanel(null)
+      },
+      onPromptSelect: (prompt) => {
+        onPromptSelect(prompt)
+        setActivePanel(null)
+      },
+      onResultSelect: (result) => {
+        onResultSelect(result)
+        setActivePanel(null)
+      },
+      onRetryTask: (task) => {
+        onRetryTask(task)
+        setActivePanel(null)
+      },
+      onUseTaskAsDraft: (task) => {
+        onUseTaskAsDraft(task)
+        setActivePanel(null)
+      },
+      profileStatus,
+      prompts,
+      results,
+      selectedMessageId,
+      setProfileStatus,
+      userName,
+    })
+
+  useCapsuleNavFootprint({
+    layoutRootRef,
+    navRef,
+  })
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -77,269 +121,75 @@ export function FloatingCapsuleNav({
     }
   }, [])
 
-  useEffect(() => {
-    if (!isSettingsOpen) return
-
-    document.body.style.overflow = "hidden"
-
-    return () => {
-      document.body.style.overflow = ""
-    }
-  }, [isSettingsOpen])
-
-  function togglePanel(panel: Exclude<FloatingPanel, null>) {
+  function togglePanel(panel: FloatingPanelKey) {
     setActivePanel((current) => (current === panel ? null : panel))
     setProfileStatus("")
   }
 
   return (
     <>
-      <nav
-        className="fixed top-1/2 left-2.5 z-40 flex -translate-y-1/2 flex-col items-center gap-1.5 rounded-full border border-[oklch(0.78_0.028_75)] bg-white/82 px-1.5 py-2 shadow-[0_14px_34px_oklch(0.35_0.04_245_/_0.16)] backdrop-blur md:left-4"
-        aria-label="画布快捷入口"
-      >
-        <CapsuleButton
-          ariaLabel="用户头像"
-          isActive={activePanel === "profile"}
-          onClick={() => togglePanel("profile")}
-        >
-          <span className="flex size-7 items-center justify-center rounded-full bg-[oklch(0.22_0.04_245)] text-[10px] font-semibold text-white">
-            {initial || <User className="size-4" />}
-          </span>
-        </CapsuleButton>
-        <CapsuleButton
-          ariaLabel="当前会话"
-          isActive={activePanel === "conversation"}
-          onClick={() => togglePanel("conversation")}
-        >
-          <MessageSquareQuote className="size-5" />
-        </CapsuleButton>
-        <CapsuleButton
-          ariaLabel="展示历史任务"
-          isActive={activePanel === "history"}
-          onClick={() => togglePanel("history")}
-        >
-          <History className="size-5" />
-        </CapsuleButton>
-        <CapsuleButton
-          ariaLabel="提示词列表"
-          isActive={activePanel === "prompts"}
-          onClick={() => togglePanel("prompts")}
-        >
-          <ListChecks className="size-5" />
-        </CapsuleButton>
-      </nav>
-
       {activePanel ? (
-        <aside className="fixed top-1/2 left-[60px] z-40 flex max-h-[min(560px,calc(100svh-32px))] w-[min(330px,calc(100vw-76px))] -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-[oklch(0.78_0.028_75)] bg-[oklch(0.965_0.018_88)] shadow-2xl md:left-[74px]">
-          <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[oklch(0.83_0.025_75)] bg-white/70 px-4 py-3">
-            <div>
-              <p className="text-xs font-medium tracking-[0.14em] text-[oklch(0.46_0.08_168)] uppercase">
-                {panelMeta[activePanel].eyebrow}
-              </p>
-              <h2 className="mt-1 text-base font-semibold">
-                {panelMeta[activePanel].title}
-              </h2>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              type="button"
-              aria-label="关闭面板"
-              onClick={() => setActivePanel(null)}
-            >
-              <X className="size-4" />
-            </Button>
-          </header>
-
-          <div className="min-h-0 flex-1 overflow-y-auto p-4">
-            {activePanel === "profile" ? (
-              <div>
-                <div className="flex items-center gap-3 rounded-md border border-[oklch(0.78_0.028_75)] bg-white/75 px-3 py-3">
-                  <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[oklch(0.22_0.04_245)] text-sm font-semibold text-white">
-                    {initial || <User className="size-4" />}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{userName}</p>
-                    <p className="mt-1 text-xs text-[oklch(0.45_0.025_245)]">
-                      本地画布用户
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-3 grid gap-2">
-                  <Button
-                    className="justify-start"
-                    variant="outline"
-                    type="button"
-                    onClick={() => {
-                      setIsSettingsOpen(true)
-                      setActivePanel(null)
-                    }}
-                  >
-                    <Settings className="size-4" />
-                    设置
-                  </Button>
-                  <Button
-                    className="justify-start text-[oklch(0.42_0.12_28)]"
-                    variant="ghost"
-                    type="button"
-                    onClick={() => setProfileStatus("暂未接入登录系统")}
-                  >
-                    <LogOut className="size-4" />
-                    退出登录
-                  </Button>
-                </div>
-                {profileStatus ? (
-                  <p className="mt-3 text-xs leading-5 text-[oklch(0.45_0.025_245)]">
-                    {profileStatus}
-                  </p>
-                ) : null}
-              </div>
-            ) : null}
-
-            {activePanel === "conversation" ? (
-              <div className="h-[min(520px,calc(100svh-152px))]">
-                <ConversationTimeline
-                  className="rounded-md border border-[oklch(0.82_0.02_245)]"
-                  isBusy={isBusy}
-                  isLoading={isConversationLoading}
-                  messages={conversationMessages}
-                  selectedMessageId={selectedMessageId}
-                  variant="panel"
-                  onAssetSelect={(asset) => {
-                    onAssetSelect(asset)
-                    setActivePanel(null)
-                  }}
-                  onMessageSelect={(message) => {
-                    onMessageSelect(message)
-                    setActivePanel(null)
-                  }}
-                  onRetryTask={(task) => {
-                    onRetryTask(task)
-                    setActivePanel(null)
-                  }}
-                  onUseTaskAsDraft={(task) => {
-                    onUseTaskAsDraft(task)
-                    setActivePanel(null)
-                  }}
-                />
-              </div>
-            ) : null}
-
-            {activePanel === "history" ? (
-              <div className="h-[min(430px,calc(100svh-152px))]">
-                <CanvasHistory
-                  results={results}
-                  onSelectResult={(result) => {
-                    onResultSelect(result)
-                    setActivePanel(null)
-                  }}
-                />
-              </div>
-            ) : null}
-
-            {activePanel === "prompts" ? (
-              <div className="grid gap-2">
-                {prompts.map((item) => (
-                  <button
-                    className="rounded-md border border-[oklch(0.78_0.028_75)] bg-white/72 px-3 py-2 text-left text-xs leading-5 text-[oklch(0.34_0.025_245)] transition hover:border-[oklch(0.49_0.12_168)] hover:bg-white"
-                    key={item}
-                    type="button"
-                    onClick={() => {
-                      onPromptSelect(item)
-                      setActivePanel(null)
-                    }}
-                  >
-                    {item}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        </aside>
+        <button
+          className="fixed inset-0 z-35 bg-transparent"
+          type="button"
+          aria-label="关闭快捷面板"
+          onClick={() => setActivePanel(null)}
+        />
       ) : null}
 
-      {isSettingsOpen ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[oklch(0.17_0.018_245_/_0.45)] p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={settingsTitleId}
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) {
-              setIsSettingsOpen(false)
-            }
-          }}
+      <div
+        className={cn(
+          capsuleRailClassName,
+          aiCanvasCapsuleRailPositionClassName,
+        )}
+      >
+        <nav
+          ref={navRef}
+          className={capsuleNavClassName}
+          aria-label="画布快捷入口"
         >
-          <div className="flex max-h-[min(720px,calc(100svh-32px))] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-[oklch(0.78_0.028_75)] bg-[oklch(0.965_0.018_88)] shadow-2xl">
-            <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[oklch(0.83_0.025_75)] bg-white/65 px-5 py-4">
-              <div>
-                <p className="text-xs font-medium tracking-[0.14em] text-[oklch(0.46_0.08_168)] uppercase">
-                  Provider Settings
-                </p>
-                <h2 id={settingsTitleId} className="mt-2 text-xl font-semibold">
-                  AI 接口配置
-                </h2>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                type="button"
-                aria-label="关闭设置"
-                onClick={() => setIsSettingsOpen(false)}
-              >
-                <X className="size-4" />
-              </Button>
-            </header>
-            <div className="min-h-0 flex-1 overflow-y-auto p-5">
-              <SettingsForm onConfigChange={onConfigChange} />
-            </div>
-          </div>
-        </div>
-      ) : null}
+          <div className="pointer-events-none absolute inset-x-2 top-2 h-14 rounded-full bg-[linear-gradient(180deg,oklch(1_0_0_/_0.92)_0%,oklch(1_0_0_/_0)_100%)]" />
+          {leadingPanels.map((panel) => (
+            <FloatingCapsuleNavButton
+              ariaLabel={panel.ariaLabel}
+              key={panel.key}
+              label={panel.navLabel}
+              isActive={activePanel === panel.key}
+              onClick={() => togglePanel(panel.key)}
+            >
+              {panel.icon}
+            </FloatingCapsuleNavButton>
+          ))}
+          <div className="h-px w-8 bg-[linear-gradient(90deg,oklch(0.84_0.02_88_/_0)_0%,oklch(0.84_0.02_88_/_1)_50%,oklch(0.84_0.02_88_/_0)_100%)]" />
+          {mainPanels.map((panel) => (
+            <FloatingCapsuleNavButton
+              ariaLabel={panel.ariaLabel}
+              key={panel.key}
+              label={panel.navLabel}
+              isActive={activePanel === panel.key}
+              onClick={() => togglePanel(panel.key)}
+            >
+              {panel.icon}
+            </FloatingCapsuleNavButton>
+          ))}
+        </nav>
+
+        {activePanel ? (
+          <FloatingCapsulePanel
+            panelConfig={panelRegistry[activePanel]}
+            onClose={() => setActivePanel(null)}
+          >
+            {panelRegistry[activePanel].render}
+          </FloatingCapsulePanel>
+        ) : null}
+      </div>
+
+      <FloatingCapsuleSettingsDialog
+        isOpen={isSettingsOpen}
+        titleId={settingsTitleId}
+        onClose={() => setIsSettingsOpen(false)}
+        onConfigChange={onConfigChange}
+      />
     </>
   )
-}
-
-function CapsuleButton({
-  ariaLabel,
-  children,
-  isActive,
-  onClick,
-}: {
-  ariaLabel: string
-  children: ReactNode
-  isActive: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      className="flex size-9 items-center justify-center rounded-full text-[oklch(0.28_0.025_245)] transition hover:bg-[oklch(0.91_0.035_88)] aria-expanded:bg-[oklch(0.22_0.04_245)] aria-expanded:text-white md:size-10"
-      type="button"
-      aria-label={ariaLabel}
-      aria-expanded={isActive}
-      onClick={onClick}
-    >
-      {children}
-    </button>
-  )
-}
-
-const panelMeta = {
-  profile: {
-    eyebrow: "Profile",
-    title: "用户头像",
-  },
-  conversation: {
-    eyebrow: "Conversation",
-    title: "当前会话",
-  },
-  history: {
-    eyebrow: "History",
-    title: "历史任务",
-  },
-  prompts: {
-    eyebrow: "Prompts",
-    title: "提示词列表",
-  },
 }

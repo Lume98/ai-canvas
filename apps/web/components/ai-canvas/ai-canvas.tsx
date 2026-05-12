@@ -1,6 +1,8 @@
 "use client"
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react"
+import { CSSProperties, FormEvent, useEffect, useMemo, useRef, useState } from "react"
+
+import { cn } from "@workspace/ui/lib/utils"
 
 import {
   defaultAiProviderConfig,
@@ -24,9 +26,19 @@ import {
   sizes,
 } from "@/components/ai-canvas/canvas-types"
 import { FloatingCapsuleNav } from "@/components/ai-canvas/floating-capsule-nav"
+import {
+  AI_CANVAS_NAV_FOOTPRINT_CSS_VARIABLE,
+  DEFAULT_AI_CANVAS_NAV_FOOTPRINT_PX,
+  aiCanvasLayoutRootClassName,
+  aiCanvasPromptComposerDockClassName,
+} from "@/components/ai-canvas/layout-tokens"
 import { PromptComposer } from "@/components/ai-canvas/prompt-composer"
 
 const CURRENT_CONVERSATION_STORAGE_KEY = "ai-canvas/current-conversation-id"
+
+type AiCanvasLayoutStyle = CSSProperties & {
+  "--ai-canvas-nav-footprint": string
+}
 
 export function AiCanvas() {
   const [providerConfig, setProviderConfig] = useState(defaultAiProviderConfig)
@@ -48,6 +60,7 @@ export function AiCanvas() {
     centerY: number
     requestId: number
   } | null>(null)
+  const layoutRootRef = useRef<HTMLElement | null>(null)
   const pendingTaskIdsRef = useRef<Set<string>>(new Set())
   const pendingFocusAssetIdRef = useRef<string | null>(null)
 
@@ -62,6 +75,9 @@ export function AiCanvas() {
 
   const assets = useMemo(() => collectConversationAssets(messages), [messages])
   const results = useMemo(() => buildHistoryResults(messages), [messages])
+  const layoutStyle: AiCanvasLayoutStyle = {
+    [AI_CANVAS_NAV_FOOTPRINT_CSS_VARIABLE]: `${DEFAULT_AI_CANVAS_NAV_FOOTPRINT_PX}px`,
+  }
 
   async function refreshMessages(
     targetConversationId: string,
@@ -486,11 +502,19 @@ export function AiCanvas() {
   }
 
   return (
-    <main className="relative h-svh overflow-hidden bg-white text-[oklch(0.17_0.018_245)]">
+    <main
+      ref={layoutRootRef}
+      className={cn(
+        "relative h-svh overflow-hidden bg-white text-[oklch(0.17_0.018_245)]",
+        aiCanvasLayoutRootClassName,
+      )}
+      style={layoutStyle}
+    >
       <FloatingCapsuleNav
         conversationMessages={messages}
         isBusy={isGenerating}
         isConversationLoading={isConversationLoading}
+        layoutRootRef={layoutRootRef}
         prompts={promptSeeds}
         results={results}
         selectedMessageId={selectedMessageId}
@@ -514,7 +538,7 @@ export function AiCanvas() {
           onSelectedItemChange={setSelectedItemId}
         />
 
-        <div className="pointer-events-none absolute inset-x-3 bottom-4 z-30 sm:inset-x-6 sm:bottom-6 xl:left-20 xl:right-8">
+        <div className={aiCanvasPromptComposerDockClassName}>
           <PromptComposer
             canGenerate={canGenerate}
             error={error}
