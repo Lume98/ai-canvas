@@ -4,7 +4,9 @@ import type {
   ComponentPropsWithoutRef,
   CSSProperties,
   PointerEvent,
+  Ref,
 } from "react"
+import { forwardRef } from "react"
 
 type CanvasDotGridProps = ComponentPropsWithoutRef<"div"> & {
   showBackground?: boolean
@@ -20,7 +22,7 @@ type DotGridStyle = CSSProperties & {
   "--dot-highlight-opacity"?: number
 }
 
-export function CanvasDotGrid({
+export const CanvasDotGrid = forwardRef(function CanvasDotGrid({
   className,
   children,
   onPointerLeave,
@@ -28,7 +30,7 @@ export function CanvasDotGrid({
   showBackground = true,
   style,
   ...props
-}: CanvasDotGridProps) {
+}: CanvasDotGridProps, ref: Ref<HTMLDivElement>) {
   function setHighlight(
     event: PointerEvent<HTMLDivElement>,
     opacity: number,
@@ -60,6 +62,7 @@ export function CanvasDotGrid({
 
   return (
     <div
+      ref={ref}
       {...props}
       className={[
         "relative flex size-full touch-none select-none items-center justify-center overflow-hidden",
@@ -82,7 +85,7 @@ export function CanvasDotGrid({
       {children}
     </div>
   )
-}
+})
 
 export function CanvasDotGridBackground({
   className,

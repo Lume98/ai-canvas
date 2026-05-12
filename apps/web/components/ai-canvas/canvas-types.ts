@@ -18,6 +18,23 @@ export type ImageAsset = {
   createdAt: string
 }
 
+export type GeneratedImageView = {
+  id: string
+  asset: ImageAsset
+  messageId: string
+  taskId: string
+  url: string
+  width: number
+  height: number
+  prompt: string
+  model: string
+  size: string
+  quality: string
+  status: "pending" | "running" | "succeeded" | "failed"
+  generationOrder: number
+  imageOrder: number
+}
+
 export type DrawTaskRecord = {
   id: string
   conversationId: string | null
@@ -55,17 +72,7 @@ export type ConversationMessage = {
   task?: DrawTaskRecord
 }
 
-export type HistoryResult = {
-  id: string
-  messageId: string
-  taskId: string
-  url: string
-  prompt: string
-  model: string
-  size: string
-  quality: string
-  status: ConversationMessage["status"]
-}
+export type HistoryResult = GeneratedImageView
 
 export type CanvasItem = {
   id: string

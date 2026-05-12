@@ -14,8 +14,12 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import { CanvasHistory } from "./canvas-history"
 import { ConversationTimeline } from "./conversation-timeline"
-import { HistoryResult } from "./canvas-types"
+import { GeneratedImageView, HistoryResult } from "./canvas-types"
 import { ConversationMessage, DrawTaskRecord, ImageAsset } from "./canvas-types"
+import {
+  GeneratedImageDisplayFieldOverrides,
+  GeneratedImageDisplayPresetKey,
+} from "./generated-image-display-presets"
 
 export const floatingPanels = [
   "profile",
@@ -28,6 +32,9 @@ export type FloatingPanelKey = (typeof floatingPanels)[number]
 
 export type PanelRenderContext = {
   conversationMessages: ConversationMessage[]
+  imagesByMessageId: Record<string, GeneratedImageView[]>
+  imageDisplayFields: GeneratedImageDisplayFieldOverrides
+  imageDisplayPreset: GeneratedImageDisplayPresetKey
   initial: string
   isBusy: boolean
   isConversationLoading: boolean
@@ -60,6 +67,9 @@ export type FloatingPanelConfig = {
 
 type FloatingCapsulePanelsOptions = {
   conversationMessages: ConversationMessage[]
+  imagesByMessageId: Record<string, GeneratedImageView[]>
+  imageDisplayFields: GeneratedImageDisplayFieldOverrides
+  imageDisplayPreset: GeneratedImageDisplayPresetKey
   initial: string
   isBusy: boolean
   isConversationLoading: boolean
@@ -139,6 +149,9 @@ const panelSchema: Record<FloatingPanelKey, FloatingPanelSchema> = {
       <div className="h-[min(520px,calc(100svh-152px))]">
         <ConversationTimeline
           className="rounded-md border border-[oklch(0.82_0.02_245)]"
+          imagesByMessageId={context.imagesByMessageId}
+          imageDisplayFields={context.imageDisplayFields}
+          imageDisplayPreset={context.imageDisplayPreset}
           isBusy={context.isBusy}
           isLoading={context.isConversationLoading}
           messages={context.conversationMessages}
@@ -163,6 +176,8 @@ const panelSchema: Record<FloatingPanelKey, FloatingPanelSchema> = {
     render: (context) => (
       <div className="h-[min(430px,calc(100svh-152px))]">
         <CanvasHistory
+          imageDisplayFields={context.imageDisplayFields}
+          imageDisplayPreset={context.imageDisplayPreset}
           results={context.results}
           onSelectResult={context.onResultSelect}
         />
@@ -220,6 +235,9 @@ export function useFloatingCapsulePanels(
   return useMemo(() => {
     const panelContext: PanelRenderContext = {
       conversationMessages: options.conversationMessages,
+      imagesByMessageId: options.imagesByMessageId,
+      imageDisplayFields: options.imageDisplayFields,
+      imageDisplayPreset: options.imageDisplayPreset,
       initial: options.initial,
       isBusy: options.isBusy,
       isConversationLoading: options.isConversationLoading,
@@ -250,6 +268,9 @@ export function useFloatingCapsulePanels(
     }
   }, [
     options.conversationMessages,
+    options.imagesByMessageId,
+    options.imageDisplayFields,
+    options.imageDisplayPreset,
     options.initial,
     options.isBusy,
     options.isConversationLoading,

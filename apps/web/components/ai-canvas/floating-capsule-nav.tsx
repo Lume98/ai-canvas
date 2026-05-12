@@ -4,6 +4,7 @@ import { type RefObject, useEffect, useId, useRef, useState } from "react"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { AiProviderConfig } from "./ai-config"
+import { CanvasDisplayPreferences } from "./display-preferences"
 import { FloatingCapsuleNavButton } from "./floating-capsule-nav-button"
 import { useCapsuleNavFootprint } from "./floating-capsule-nav-layout"
 import {
@@ -12,8 +13,9 @@ import {
   useFloatingCapsulePanels,
 } from "./floating-capsule-nav-panels"
 import { FloatingCapsuleSettingsDialog } from "./floating-capsule-settings-dialog"
+import { GeneratedImageDisplayPresetKey } from "./generated-image-display-presets"
 import { aiCanvasCapsuleRailPositionClassName } from "./layout-tokens"
-import { HistoryResult } from "./canvas-types"
+import { GeneratedImageView, HistoryResult } from "./canvas-types"
 import { ConversationMessage, DrawTaskRecord, ImageAsset } from "./canvas-types"
 
 type FloatingPanel = FloatingPanelKey | null
@@ -26,6 +28,9 @@ const capsuleNavClassName =
 
 type FloatingCapsuleNavProps = {
   conversationMessages: ConversationMessage[]
+  imageDisplayFields: CanvasDisplayPreferences["imageDisplayFields"]
+  imageDisplayPreset: GeneratedImageDisplayPresetKey
+  imagesByMessageId: Record<string, GeneratedImageView[]>
   isBusy: boolean
   isConversationLoading: boolean
   prompts: string[]
@@ -33,6 +38,7 @@ type FloatingCapsuleNavProps = {
   selectedMessageId: string | null
   onAssetSelect: (asset: ImageAsset) => void
   onConfigChange: (config: AiProviderConfig) => void
+  onDisplayPreferencesChange: (preferences: CanvasDisplayPreferences) => void
   onMessageSelect: (message: ConversationMessage) => void
   onPromptSelect: (prompt: string) => void
   onResultSelect: (result: HistoryResult) => void
@@ -44,6 +50,9 @@ type FloatingCapsuleNavProps = {
 
 export function FloatingCapsuleNav({
   conversationMessages,
+  imageDisplayFields,
+  imageDisplayPreset,
+  imagesByMessageId,
   isBusy,
   isConversationLoading,
   prompts,
@@ -51,6 +60,7 @@ export function FloatingCapsuleNav({
   selectedMessageId,
   onAssetSelect,
   onConfigChange,
+  onDisplayPreferencesChange,
   layoutRootRef,
   onMessageSelect,
   onPromptSelect,
@@ -68,6 +78,9 @@ export function FloatingCapsuleNav({
   const { leadingPanels, mainPanels, panelRegistry } =
     useFloatingCapsulePanels({
       conversationMessages,
+      imageDisplayFields,
+      imageDisplayPreset,
+      imagesByMessageId,
       initial,
       isBusy,
       isConversationLoading,
@@ -189,6 +202,7 @@ export function FloatingCapsuleNav({
         titleId={settingsTitleId}
         onClose={() => setIsSettingsOpen(false)}
         onConfigChange={onConfigChange}
+        onDisplayPreferencesChange={onDisplayPreferencesChange}
       />
     </>
   )

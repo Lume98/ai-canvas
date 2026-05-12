@@ -8,11 +8,13 @@ import { Button } from "@workspace/ui/components/button"
 import { SettingsForm } from "@/components/settings/settings-form"
 
 import { AiProviderConfig } from "./ai-config"
+import { CanvasDisplayPreferences } from "./display-preferences"
 
 type FloatingCapsuleSettingsDialogProps = {
   isOpen: boolean
   onClose: () => void
   onConfigChange: (config: AiProviderConfig) => void
+  onDisplayPreferencesChange: (preferences: CanvasDisplayPreferences) => void
   titleId: string
 }
 
@@ -20,6 +22,7 @@ export function FloatingCapsuleSettingsDialog({
   isOpen,
   onClose,
   onConfigChange,
+  onDisplayPreferencesChange,
   titleId,
 }: FloatingCapsuleSettingsDialogProps) {
   useEffect(() => {
@@ -69,7 +72,10 @@ export function FloatingCapsuleSettingsDialog({
           </Button>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto p-5">
-          <SettingsForm onConfigChange={onConfigChange} />
+          <SettingsForm
+            onConfigChange={onConfigChange}
+            onDisplayPreferencesChange={onDisplayPreferencesChange}
+          />
         </div>
       </div>
     </div>

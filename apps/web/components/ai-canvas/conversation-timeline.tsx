@@ -8,12 +8,24 @@ import {
   Sparkles,
   TriangleAlert,
 } from "lucide-react"
-import Image from "next/image"
 
-import { ConversationMessage, DrawTaskRecord, ImageAsset } from "./canvas-types"
+import {
+  ConversationMessage,
+  DrawTaskRecord,
+  GeneratedImageView,
+  ImageAsset,
+} from "./canvas-types"
+import { GeneratedImagePresetCard } from "./generated-image-card"
+import {
+  GeneratedImageDisplayFieldOverrides,
+  GeneratedImageDisplayPresetKey,
+} from "./generated-image-display-presets"
 
 type ConversationTimelineProps = {
   className?: string
+  imagesByMessageId: Record<string, GeneratedImageView[]>
+  imageDisplayFields: GeneratedImageDisplayFieldOverrides
+  imageDisplayPreset: GeneratedImageDisplayPresetKey
   variant?: "docked" | "panel"
   isBusy: boolean
   isLoading: boolean
@@ -27,6 +39,9 @@ type ConversationTimelineProps = {
 
 export function ConversationTimeline({
   className,
+  imagesByMessageId,
+  imageDisplayFields,
+  imageDisplayPreset,
   isBusy,
   isLoading,
   messages,
@@ -75,6 +90,9 @@ export function ConversationTimeline({
           <div className="space-y-3">
             {messages.map((message) => (
               <MessageCard
+                images={imagesByMessageId[message.id] ?? []}
+                imageDisplayFields={imageDisplayFields}
+                imageDisplayPreset={imageDisplayPreset}
                 isBusy={isBusy}
                 key={message.id}
                 isSelected={selectedMessageId === message.id}
@@ -93,6 +111,9 @@ export function ConversationTimeline({
 }
 
 function MessageCard({
+  images,
+  imageDisplayFields,
+  imageDisplayPreset,
   isBusy,
   isSelected,
   message,
@@ -101,6 +122,9 @@ function MessageCard({
   onRetryTask,
   onUseTaskAsDraft,
 }: {
+  images: GeneratedImageView[]
+  imageDisplayFields: GeneratedImageDisplayFieldOverrides
+  imageDisplayPreset: GeneratedImageDisplayPresetKey
   isBusy: boolean
   isSelected: boolean
   message: ConversationMessage
@@ -189,6 +213,9 @@ function MessageCard({
 
       {isAssistant ? (
         <AssistantMessageBody
+          images={images}
+          imageDisplayFields={imageDisplayFields}
+          imageDisplayPreset={imageDisplayPreset}
           message={message}
           onAssetSelect={onAssetSelect}
         />
@@ -223,9 +250,15 @@ function ActionButton({
 
 function AssistantMessageBody({
   message,
+  images,
+  imageDisplayFields,
+  imageDisplayPreset,
   onAssetSelect,
 }: {
   message: ConversationMessage
+  images: GeneratedImageView[]
+  imageDisplayFields: GeneratedImageDisplayFieldOverrides
+  imageDisplayPreset: GeneratedImageDisplayPresetKey
   onAssetSelect: (asset: ImageAsset) => void
 }) {
   if (message.status === "failed") {
@@ -244,7 +277,7 @@ function AssistantMessageBody({
     )
   }
 
-  if (message.assets.length === 0) {
+  if (images.length === 0) {
     return (
       <div className="mt-3 rounded-2xl border border-dashed border-[oklch(0.8_0.02_245)] bg-[oklch(0.985_0.006_245)] px-3 py-3 text-xs leading-5 text-[oklch(0.44_0.02_245)]">
         此轮没有返回可展示图片。
@@ -259,42 +292,30 @@ function AssistantMessageBody({
           Assets
         </p>
         <p className="text-[11px] text-[oklch(0.54_0.02_245)]">
-          {message.assets.length} 张
+          {images.length} 张
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        {message.assets.map((asset) =>
-          asset.url ? (
-            <button
-              key={asset.id}
-              className="group overflow-hidden rounded-2xl border border-[oklch(0.82_0.018_245)] bg-[oklch(0.985_0.008_245)] shadow-sm transition hover:-translate-y-0.5 hover:border-[oklch(0.55_0.12_168)]"
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation()
-                onAssetSelect(asset)
-              }}
-            >
-              <div className="relative aspect-[4/4] overflow-hidden">
-                <Image
-                  fill
-                  alt=""
-                  className="object-cover transition duration-300 group-hover:scale-[1.03]"
-                  src={asset.url}
-                  unoptimized
-                />
-              </div>
-              <div className="flex items-center justify-between px-2.5 py-2">
-                <p className="text-[11px] font-medium text-[oklch(0.3_0.02_245)]">
-                  {asset.width}×{asset.height}
-                </p>
-                <p className="text-[10px] text-[oklch(0.52_0.02_245)]">
-                  #{asset.sortOrder + 1}
-                </p>
-              </div>
-            </button>
-          ) : null,
-        )}
+        {images.map((image) => (
+          <button
+            key={image.id}
+            className="group overflow-hidden rounded-2xl border border-[oklch(0.82_0.018_245)] bg-[oklch(0.985_0.008_245)] shadow-sm transition hover:-translate-y-0.5 hover:border-[oklch(0.55_0.12_168)]"
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation()
+              onAssetSelect(image.asset)
+            }}
+          >
+            <div className="relative aspect-[4/4] overflow-hidden">
+              <GeneratedImagePresetCard
+                fieldOverrides={imageDisplayFields}
+                image={image}
+                preset={imageDisplayPreset}
+              />
+            </div>
+          </button>
+        ))}
       </div>
     </div>
   )

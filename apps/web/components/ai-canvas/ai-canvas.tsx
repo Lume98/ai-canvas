@@ -8,7 +8,7 @@ import {
   defaultAiProviderConfig,
   readAiProviderConfig,
 } from "@/components/ai-canvas/ai-config"
-import { CanvasStage } from "@/components/ai-canvas/canvas-stage"
+import { CanvasStage, CanvasStageHandle } from "@/components/ai-canvas/canvas-stage"
 import {
   createConversation,
   createConversationDrawTask,
@@ -16,8 +16,14 @@ import {
   readDrawTask,
 } from "@/components/ai-canvas/conversation-api"
 import {
+  CanvasDisplayPreferences,
+  defaultCanvasDisplayPreferences,
+  readCanvasDisplayPreferences,
+} from "@/components/ai-canvas/display-preferences"
+import {
   CanvasItem,
   ConversationMessage,
+  GeneratedImageView,
   HistoryResult,
   ImageAsset,
   models,
@@ -48,6 +54,8 @@ export function AiCanvas() {
   const [model, setModel] = useState(models[0]?.value ?? "gpt-image-2")
   const [size, setSize] = useState(sizes[0] ?? "1024x1024")
   const [quality, setQuality] = useState(qualities[0] ?? "auto")
+  const [displayPreferences, setDisplayPreferences] =
+    useState<CanvasDisplayPreferences>(defaultCanvasDisplayPreferences)
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState("")
   const [conversationId, setConversationId] = useState<string | null>(null)
@@ -61,6 +69,7 @@ export function AiCanvas() {
     requestId: number
   } | null>(null)
   const layoutRootRef = useRef<HTMLElement | null>(null)
+  const canvasStageRef = useRef<CanvasStageHandle | null>(null)
   const pendingTaskIdsRef = useRef<Set<string>>(new Set())
   const pendingFocusAssetIdRef = useRef<string | null>(null)
 
@@ -73,8 +82,16 @@ export function AiCanvas() {
     !isGenerating &&
     Boolean(conversationId)
 
-  const assets = useMemo(() => collectConversationAssets(messages), [messages])
-  const results = useMemo(() => buildHistoryResults(messages), [messages])
+  const generatedImages = useMemo(() => buildGeneratedImageViews(messages), [messages])
+  const assets = useMemo(
+    () => generatedImages.map((image) => image.asset),
+    [generatedImages],
+  )
+  const results = useMemo(() => buildHistoryResults(generatedImages), [generatedImages])
+  const imagesByMessageId = useMemo(
+    () => groupImagesByMessageId(generatedImages),
+    [generatedImages],
+  )
   const layoutStyle: AiCanvasLayoutStyle = {
     [AI_CANVAS_NAV_FOOTPRINT_CSS_VARIABLE]: `${DEFAULT_AI_CANVAS_NAV_FOOTPRINT_PX}px`,
   }
@@ -124,6 +141,10 @@ export function AiCanvas() {
     return () => {
       isMounted = false
     }
+  }, [])
+
+  useEffect(() => {
+    setDisplayPreferences(readCanvasDisplayPreferences())
   }, [])
 
   useEffect(() => {
@@ -216,6 +237,31 @@ export function AiCanvas() {
   useEffect(() => {
     syncCanvasItemsWithAssets(assets, setCanvasItems)
   }, [assets])
+
+  useEffect(() => {
+    const layoutRoot = layoutRootRef.current
+
+    if (!layoutRoot) return
+
+    function handleWheel(event: WheelEvent) {
+      if (!event.ctrlKey && !event.metaKey) {
+        return
+      }
+
+      event.preventDefault()
+      canvasStageRef.current?.zoomFromWheel({
+        clientX: event.clientX,
+        clientY: event.clientY,
+        deltaY: event.deltaY,
+      })
+    }
+
+    layoutRoot.addEventListener("wheel", handleWheel, { passive: false })
+
+    return () => {
+      layoutRoot.removeEventListener("wheel", handleWheel)
+    }
+  }, [])
 
   useEffect(() => {
     if (!conversationId) return
@@ -512,6 +558,9 @@ export function AiCanvas() {
     >
       <FloatingCapsuleNav
         conversationMessages={messages}
+        imageDisplayFields={displayPreferences.imageDisplayFields}
+        imageDisplayPreset={displayPreferences.imageDisplayPreset}
+        imagesByMessageId={imagesByMessageId}
         isBusy={isGenerating}
         isConversationLoading={isConversationLoading}
         layoutRootRef={layoutRootRef}
@@ -520,6 +569,9 @@ export function AiCanvas() {
         selectedMessageId={selectedMessageId}
         onAssetSelect={handleSelectAsset}
         onConfigChange={setProviderConfig}
+        onDisplayPreferencesChange={(preferences) => {
+          setDisplayPreferences(preferences)
+        }}
         onMessageSelect={handleSelectMessage}
         onPromptSelect={setPrompt}
         onResultSelect={handleSelectResult}
@@ -528,7 +580,10 @@ export function AiCanvas() {
       />
       <section className="relative flex h-full min-h-0 flex-col overflow-hidden">
         <CanvasStage
-          assets={assets}
+          ref={canvasStageRef}
+          images={generatedImages}
+          imageDisplayFields={displayPreferences.imageDisplayFields}
+          imageDisplayPreset={displayPreferences.imageDisplayPreset}
           canvasItems={canvasItems}
           focusRequest={focusRequest}
           isGenerating={isGenerating || isConversationLoading}
@@ -559,31 +614,66 @@ export function AiCanvas() {
   )
 }
 
-function buildHistoryResults(messages: ConversationMessage[]): HistoryResult[] {
-  return messages
-    .filter((message) => message.role === "assistant" && message.task)
-    .flatMap((message) =>
-      message.assets
-        .filter((asset) => Boolean(asset.url))
-        .map((asset) => ({
-          id: asset.id,
-          messageId: message.id,
-          taskId: asset.taskId,
-          url: asset.url || "",
-          prompt: message.task?.prompt || "",
-          model: message.task?.model || "gpt-image-2",
-          size: message.task?.size || "1024x1024",
-          quality: message.task?.quality || "auto",
-          status: message.status,
-        }))
-    )
-    .reverse()
-}
-
 function collectConversationAssets(messages: ConversationMessage[]): ImageAsset[] {
   return messages.flatMap((message) =>
     message.assets.filter((asset) => Boolean(asset.url))
   )
+}
+
+function buildGeneratedImageViews(
+  messages: ConversationMessage[],
+): GeneratedImageView[] {
+  let generationOrder = 0
+  const images: GeneratedImageView[] = []
+
+  for (const message of messages) {
+    if (message.role !== "assistant" || !message.task) {
+      continue
+    }
+
+    generationOrder += 1
+
+    for (const asset of message.assets) {
+      if (!asset.url) {
+        continue
+      }
+
+      images.push({
+        id: asset.id,
+        asset,
+        messageId: message.id,
+        taskId: asset.taskId,
+        url: asset.url,
+        width: asset.width,
+        height: asset.height,
+        prompt: message.task.prompt,
+        model: message.task.model,
+        size: message.task.size,
+        quality: message.task.quality,
+        status: message.status,
+        generationOrder,
+        imageOrder: asset.sortOrder + 1,
+      })
+    }
+  }
+
+  return images
+}
+
+function buildHistoryResults(images: GeneratedImageView[]): HistoryResult[] {
+  return [...images].reverse()
+}
+
+function groupImagesByMessageId(images: GeneratedImageView[]) {
+  const grouped: Record<string, GeneratedImageView[]> = {}
+
+  for (const image of images) {
+    const messageImages = grouped[image.messageId] ?? []
+    messageImages.push(image)
+    grouped[image.messageId] = messageImages
+  }
+
+  return grouped
 }
 
 function syncCanvasItemsWithAssets(

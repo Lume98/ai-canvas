@@ -4,6 +4,8 @@ from fastapi.responses import JSONResponse, Response
 from worker.api import error_response
 from worker.services import DrawTaskService
 
+from .public_urls import with_public_message_assets
+
 
 def register_message_routes(
     router: APIRouter,
@@ -16,5 +18,8 @@ def register_message_routes(
         if not conversation:
             return error_response("会话不存在。", 404)
 
-        messages = draw_tasks.list_conversation_messages(conversation_id)
+        messages = [
+            with_public_message_assets(message)
+            for message in draw_tasks.list_conversation_messages(conversation_id)
+        ]
         return JSONResponse({"messages": messages})

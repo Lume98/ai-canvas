@@ -7,7 +7,7 @@ from worker.api import error_response, parse_request_model, request_body_schema
 from worker.api.schemas import DrawTaskRequest
 from worker.services import DrawTaskService, DrawTaskServiceError
 
-from .paths import generated_image_public_path
+from .public_urls import with_public_result_urls
 
 
 def register_draw_task_routes(router: APIRouter, draw_tasks: DrawTaskService) -> None:
@@ -60,51 +60,3 @@ def register_draw_task_routes(router: APIRouter, draw_tasks: DrawTaskService) ->
             return error_response("任务不存在。", 404)
 
         return JSONResponse({"task": with_public_result_urls(task)})
-
-
-def with_public_result_urls(task: dict[str, Any]) -> dict[str, Any]:
-    result_filename = task.get("resultFilename")
-    assets = task.get("assets")
-
-    public_task = without_internal_result_filename(task)
-    public_assets = (
-        [with_public_asset_url(asset) for asset in assets]
-        if isinstance(assets, list)
-        else []
-    )
-
-    if not isinstance(result_filename, str):
-        return {**public_task, "resultUrl": None, "assets": public_assets}
-
-    if is_public_url(result_filename):
-        return {**public_task, "resultUrl": result_filename, "assets": public_assets}
-
-    return {
-        **public_task,
-        "resultUrl": generated_image_public_path(result_filename),
-        "assets": public_assets,
-    }
-
-
-def without_internal_result_filename(task: dict[str, Any]) -> dict[str, Any]:
-    return {
-        key: value
-        for key, value in task.items()
-        if key != "resultFilename"
-    }
-
-
-def with_public_asset_url(asset: dict[str, Any]) -> dict[str, Any]:
-    filename = asset.get("filename")
-
-    if not isinstance(filename, str):
-        return {**asset, "url": None}
-
-    if is_public_url(filename):
-        return {**asset, "url": filename}
-
-    return {**asset, "url": generated_image_public_path(filename)}
-
-
-def is_public_url(value: str) -> bool:
-    return value.startswith("/") or value.startswith(("http://", "https://"))

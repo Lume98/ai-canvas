@@ -1,17 +1,33 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react"
 import { ImageIcon, LoaderCircle } from "lucide-react"
-import Image from "next/image"
 
 import { CanvasDotGrid } from "./canvas-dot-grid"
-import { CanvasItem, ImageAsset } from "./canvas-types"
+import { CanvasItem, GeneratedImageView, ImageAsset } from "./canvas-types"
+import { GeneratedImagePresetCard } from "./generated-image-card"
+import {
+  GeneratedImageDisplayFieldOverrides,
+  GeneratedImageDisplayPresetKey,
+} from "./generated-image-display-presets"
 
 const MIN_SCALE = 0.1
 const MAX_SCALE = 4
 const ZOOM_SENSITIVITY = 0.0015
 const GRID_SIZE = 22
 const AXIS_STEP = 500
+
+type CanvasZoomGesture = {
+  clientX: number
+  clientY: number
+  deltaY: number
+}
+
+export type CanvasStageHandle = {
+  zoomFromWheel: (gesture: CanvasZoomGesture) => void
+}
+
+type CanvasSurfaceHandle = CanvasStageHandle
 
 type ViewportTransform = {
   pan: {
@@ -22,7 +38,9 @@ type ViewportTransform = {
 }
 
 type CanvasStageProps = {
-  assets: ImageAsset[]
+  images: GeneratedImageView[]
+  imageDisplayFields: GeneratedImageDisplayFieldOverrides
+  imageDisplayPreset: GeneratedImageDisplayPresetKey
   canvasItems: CanvasItem[]
   focusRequest: {
     centerX: number
@@ -36,8 +54,10 @@ type CanvasStageProps = {
   onSelectedItemChange: (itemId: string | null) => void
 }
 
-export function CanvasStage({
-  assets,
+export const CanvasStage = forwardRef<CanvasStageHandle, CanvasStageProps>(function CanvasStage({
+  images,
+  imageDisplayFields,
+  imageDisplayPreset,
   canvasItems,
   focusRequest,
   isGenerating,
@@ -45,13 +65,24 @@ export function CanvasStage({
   onAssetSelect,
   onSelectedItemChange,
   selectedItemId,
-}: CanvasStageProps) {
+}, ref) {
+  const surfaceRef = useRef<CanvasSurfaceHandle | null>(null)
+
+  useImperativeHandle(ref, () => ({
+    zoomFromWheel(gesture) {
+      surfaceRef.current?.zoomFromWheel(gesture)
+    },
+  }), [])
+
   return (
     <section className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="min-h-0 flex-1 overflow-hidden">
-        {assets.length > 0 ? (
+        {images.length > 0 ? (
           <InfiniteCanvas
-            assets={assets}
+            ref={surfaceRef}
+            images={images}
+            imageDisplayFields={imageDisplayFields}
+            imageDisplayPreset={imageDisplayPreset}
             canvasItems={canvasItems}
             focusRequest={focusRequest}
             isGenerating={isGenerating}
@@ -61,24 +92,20 @@ export function CanvasStage({
             selectedItemId={selectedItemId}
           />
         ) : (
-          <EmptyCanvas isGenerating={isGenerating} />
+          <EmptyCanvas
+            ref={surfaceRef}
+            isGenerating={isGenerating}
+          />
         )}
       </div>
     </section>
   )
-}
+})
 
-function InfiniteCanvas({
-  assets,
-  canvasItems,
-  focusRequest,
-  isGenerating,
-  onCanvasItemsChange,
-  onAssetSelect,
-  onSelectedItemChange,
-  selectedItemId,
-}: {
-  assets: ImageAsset[]
+type InfiniteCanvasProps = {
+  images: GeneratedImageView[]
+  imageDisplayFields: GeneratedImageDisplayFieldOverrides
+  imageDisplayPreset: GeneratedImageDisplayPresetKey
   canvasItems: CanvasItem[]
   focusRequest: {
     centerX: number
@@ -90,8 +117,22 @@ function InfiniteCanvas({
   onAssetSelect?: (asset: ImageAsset) => void
   onSelectedItemChange: (itemId: string | null) => void
   selectedItemId: string | null
-}) {
-  const assetsById = new Map(assets.map((asset) => [asset.id, asset]))
+}
+
+const InfiniteCanvas = forwardRef<CanvasSurfaceHandle, InfiniteCanvasProps>(function InfiniteCanvas({
+  images,
+  imageDisplayFields,
+  imageDisplayPreset,
+  canvasItems,
+  focusRequest,
+  isGenerating,
+  onCanvasItemsChange,
+  onAssetSelect,
+  onSelectedItemChange,
+  selectedItemId,
+}, ref) {
+  const imagesByAssetId = new Map(images.map((image) => [image.asset.id, image]))
+  const containerRef = useRef<HTMLDivElement | null>(null)
   const dragStartRef = useRef({
     pointerId: -1,
     x: 0,
@@ -114,6 +155,24 @@ function InfiniteCanvas({
   const [isDragging, setIsDragging] = useState(false)
   const [isDraggingItem, setIsDraggingItem] = useState(false)
   const [isSpacePressed, setIsSpacePressed] = useState(false)
+
+  function zoomFromWheel({ clientX, clientY, deltaY }: CanvasZoomGesture) {
+    const container = containerRef.current
+
+    if (!container) return
+
+    setViewport((current) =>
+      applyWheelZoom(current, container.getBoundingClientRect(), {
+        clientX,
+        clientY,
+        deltaY,
+      }),
+    )
+  }
+
+  useImperativeHandle(ref, () => ({
+    zoomFromWheel,
+  }), [])
 
   useEffect(() => {
     if (!focusRequest) return
@@ -220,29 +279,15 @@ function InfiniteCanvas({
   }
 
   function handleWheel(event: React.WheelEvent<HTMLDivElement>) {
-    event.preventDefault()
-
-    const bounds = event.currentTarget.getBoundingClientRect()
-    const cursor = {
-      x: event.clientX - bounds.left - bounds.width / 2,
-      y: event.clientY - bounds.top - bounds.height / 2,
+    if (event.ctrlKey || event.metaKey) {
+      return
     }
 
-    setViewport((current) => {
-      const nextScale = clamp(
-        current.scale * Math.exp(-event.deltaY * ZOOM_SENSITIVITY),
-        MIN_SCALE,
-        MAX_SCALE,
-      )
-      const scaleRatio = nextScale / current.scale
-
-      return {
-        scale: nextScale,
-        pan: {
-          x: cursor.x - (cursor.x - current.pan.x) * scaleRatio,
-          y: cursor.y - (cursor.y - current.pan.y) * scaleRatio,
-        },
-      }
+    event.preventDefault()
+    zoomFromWheel({
+      clientX: event.clientX,
+      clientY: event.clientY,
+      deltaY: event.deltaY,
     })
   }
 
@@ -290,6 +335,7 @@ function InfiniteCanvas({
 
   return (
     <CanvasDotGrid
+      ref={containerRef}
       className={[
         isDragging
           ? "cursor-grabbing"
@@ -321,17 +367,19 @@ function InfiniteCanvas({
         }}
       >
         {canvasItems.map((item) => {
-          const asset = assetsById.get(item.assetId)
+          const image = imagesByAssetId.get(item.assetId)
 
-          if (!asset || !asset.url) return null
+          if (!image) return null
 
           return (
             <CanvasImageItem
+              image={image}
+              imageDisplayFields={imageDisplayFields}
+              imageDisplayPreset={imageDisplayPreset}
               isDragging={isDraggingItem && selectedItemId === item.id}
               isSelected={selectedItemId === item.id}
               item={item}
               key={item.id}
-              asset={asset}
               onAssetSelect={onAssetSelect}
               onPointerDown={handleItemPointerDown}
             />
@@ -346,16 +394,21 @@ function InfiniteCanvas({
       <GeneratingOverlay isGenerating={isGenerating} />
     </CanvasDotGrid>
   )
-}
+})
 
 function CanvasImageItem({
+  image,
+  imageDisplayFields,
+  imageDisplayPreset,
   isDragging,
   isSelected,
   item,
   onPointerDown,
   onAssetSelect,
-  asset,
 }: {
+  image: GeneratedImageView
+  imageDisplayFields: GeneratedImageDisplayFieldOverrides
+  imageDisplayPreset: GeneratedImageDisplayPresetKey
   isDragging: boolean
   isSelected: boolean
   item: CanvasItem
@@ -364,7 +417,6 @@ function CanvasImageItem({
     item: CanvasItem,
   ) => void
   onAssetSelect?: (asset: ImageAsset) => void
-  asset: ImageAsset
 }) {
   return (
     <div
@@ -381,15 +433,12 @@ function CanvasImageItem({
         height: item.height,
         transform: `translate3d(${item.x}px, ${item.y}px, 0)`,
       }}
-      onDoubleClick={() => onAssetSelect?.(asset)}
+      onDoubleClick={() => onAssetSelect?.(image.asset)}
     >
-      <Image
-        className="pointer-events-none object-contain"
-        fill
-        draggable={false}
-        unoptimized
-        src={asset.url || ""}
-        alt=""
+      <GeneratedImagePresetCard
+        fieldOverrides={imageDisplayFields}
+        image={image}
+        preset={imageDisplayPreset}
       />
     </div>
   )
@@ -496,9 +545,58 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max)
 }
 
-function EmptyCanvas({ isGenerating }: { isGenerating: boolean }) {
+const EmptyCanvas = forwardRef<CanvasSurfaceHandle, { isGenerating: boolean }>(
+function EmptyCanvas({ isGenerating }, ref) {
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const [viewport, setViewport] = useState<ViewportTransform>({
+    pan: { x: 0, y: 0 },
+    scale: 1,
+  })
+
+  function zoomFromWheel({ clientX, clientY, deltaY }: CanvasZoomGesture) {
+    const container = containerRef.current
+
+    if (!container) return
+
+    setViewport((current) =>
+      applyWheelZoom(current, container.getBoundingClientRect(), {
+        clientX,
+        clientY,
+        deltaY,
+      }),
+    )
+  }
+
+  useImperativeHandle(ref, () => ({
+    zoomFromWheel,
+  }), [])
+
+  function handleWheel(event: React.WheelEvent<HTMLDivElement>) {
+    if (event.ctrlKey || event.metaKey) {
+      return
+    }
+
+    event.preventDefault()
+    zoomFromWheel({
+      clientX: event.clientX,
+      clientY: event.clientY,
+      deltaY: event.deltaY,
+    })
+  }
+
   return (
-    <CanvasDotGrid>
+    <CanvasDotGrid
+      ref={containerRef}
+      onWheel={handleWheel}
+      style={
+        {
+          "--canvas-grid-size": `${GRID_SIZE * viewport.scale}px`,
+          "--canvas-grid-x": `calc(50% + ${viewport.pan.x}px)`,
+          "--canvas-grid-y": `calc(50% + ${viewport.pan.y}px)`,
+        } as React.CSSProperties
+      }
+    >
+      <div className="absolute inset-0 bg-white bg-[radial-gradient(circle,oklch(0.78_0.018_245)_1px,transparent_1px)] bg-[position:var(--canvas-grid-x)_var(--canvas-grid-y)] bg-[length:var(--canvas-grid-size)_var(--canvas-grid-size)]" />
       <div className="flex max-w-sm flex-col items-center px-8 text-center">
         <ImageIcon className="size-12 text-[oklch(0.58_0.16_42)]" />
         <p className="mt-4 text-lg font-semibold">空画布</p>
@@ -510,6 +608,31 @@ function EmptyCanvas({ isGenerating }: { isGenerating: boolean }) {
       <GeneratingOverlay isGenerating={isGenerating} />
     </CanvasDotGrid>
   )
+})
+
+function applyWheelZoom(
+  viewport: ViewportTransform,
+  bounds: DOMRect,
+  gesture: CanvasZoomGesture,
+): ViewportTransform {
+  const cursor = {
+    x: gesture.clientX - bounds.left - bounds.width / 2,
+    y: gesture.clientY - bounds.top - bounds.height / 2,
+  }
+  const nextScale = clamp(
+    viewport.scale * Math.exp(-gesture.deltaY * ZOOM_SENSITIVITY),
+    MIN_SCALE,
+    MAX_SCALE,
+  )
+  const scaleRatio = nextScale / viewport.scale
+
+  return {
+    scale: nextScale,
+    pan: {
+      x: cursor.x - (cursor.x - viewport.pan.x) * scaleRatio,
+      y: cursor.y - (cursor.y - viewport.pan.y) * scaleRatio,
+    },
+  }
 }
 
 function GeneratingOverlay({ isGenerating }: { isGenerating: boolean }) {

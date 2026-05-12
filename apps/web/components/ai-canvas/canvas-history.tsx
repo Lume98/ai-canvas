@@ -1,13 +1,20 @@
-import Image from "next/image"
-
 import { HistoryResult } from "./canvas-types"
+import { GeneratedImagePresetCard } from "./generated-image-card"
+import {
+  GeneratedImageDisplayFieldOverrides,
+  GeneratedImageDisplayPresetKey,
+} from "./generated-image-display-presets"
 
 type CanvasHistoryProps = {
+  imageDisplayFields: GeneratedImageDisplayFieldOverrides
+  imageDisplayPreset: GeneratedImageDisplayPresetKey
   results: HistoryResult[]
   onSelectResult: (result: HistoryResult) => void
 }
 
 export function CanvasHistory({
+  imageDisplayFields,
+  imageDisplayPreset,
   results,
   onSelectResult,
 }: CanvasHistoryProps) {
@@ -35,18 +42,12 @@ export function CanvasHistory({
               type="button"
               onClick={() => onSelectResult(item)}
             >
-              <Image
-                className="aspect-square w-full object-cover"
-                width={220}
-                height={220}
-                unoptimized
-                src={item.url}
-                alt=""
-              />
-              <div className="px-3 py-2">
-                <p className="line-clamp-2 text-xs leading-5 text-[oklch(0.36_0.025_245)]">
-                  {item.prompt}
-                </p>
+              <div className="relative aspect-square">
+                <GeneratedImagePresetCard
+                  fieldOverrides={imageDisplayFields}
+                  image={item}
+                  preset={imageDisplayPreset}
+                />
               </div>
             </button>
           ))}
