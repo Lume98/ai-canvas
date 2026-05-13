@@ -1,12 +1,8 @@
-import { proxyWorkerRequest } from "@/lib/worker-proxy"
+import { generateImage } from "@/lib/mock-api"
 
 export const runtime = "nodejs"
 export const maxDuration = 120
 
 export async function POST(request: Request) {
-  return proxyWorkerRequest({
-    path: "/images/generate",
-    method: "POST",
-    request,
-  })
+  return generateImage(request)
 }

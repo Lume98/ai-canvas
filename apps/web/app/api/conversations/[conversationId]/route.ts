@@ -1,4 +1,4 @@
-import { proxyWorkerRequest } from "@/lib/worker-proxy"
+import { readConversation } from "@/lib/mock-api"
 
 export const runtime = "nodejs"
 
@@ -11,8 +11,5 @@ type RouteContext = {
 export async function GET(_request: Request, context: RouteContext) {
   const { conversationId } = await context.params
 
-  return proxyWorkerRequest({
-    path: `/conversations/${encodeURIComponent(conversationId)}`,
-    method: "GET",
-  })
+  return readConversation(conversationId)
 }

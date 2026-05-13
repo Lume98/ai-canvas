@@ -98,7 +98,7 @@ export function SettingsForm({
     return () => {
       isMounted = false
     }
-  }, [onConfigChange])
+  }, [onConfigChange, onDisplayPreferencesChange])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -174,7 +174,7 @@ export function SettingsForm({
           placeholder="sk-..."
         />
         <span className="mt-2 block text-xs leading-5 text-[oklch(0.45_0.025_245)]">
-          保存在 Worker，后台任务和同步生成共用这份配置。
+          当前保存在 Web 端 mock 配置中，用于本地联调和界面演示。
         </span>
       </label>
 
@@ -222,7 +222,7 @@ export function SettingsForm({
           </Select>
         </div>
         <span className="mt-2 block text-xs leading-5 text-[oklch(0.45_0.025_245)]">
-          仅影响本地界面的图片信息展示，不会写入 Worker 或接口配置。
+          仅影响本地界面的图片信息展示，不会写入 mock API 配置。
         </span>
       </label>
 

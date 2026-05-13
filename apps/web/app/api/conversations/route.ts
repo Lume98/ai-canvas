@@ -1,11 +1,7 @@
-import { proxyWorkerRequest } from "@/lib/worker-proxy"
+import { createConversation } from "@/lib/mock-api"
 
 export const runtime = "nodejs"
 
 export async function POST(request: Request) {
-  return proxyWorkerRequest({
-    path: "/conversations",
-    method: "POST",
-    request,
-  })
+  return createConversation(request)
 }

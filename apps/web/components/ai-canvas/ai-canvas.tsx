@@ -92,6 +92,16 @@ export function AiCanvas() {
     () => groupImagesByMessageId(generatedImages),
     [generatedImages],
   )
+  const pendingMessages = useMemo(
+    () =>
+      messages.filter(
+        (message) =>
+          message.role === "assistant" &&
+          (message.status === "pending" || message.status === "running"),
+      ),
+    [messages],
+  )
+  const isCanvasGenerating = isGenerating || pendingMessages.length > 0
   const layoutStyle: AiCanvasLayoutStyle = {
     [AI_CANVAS_NAV_FOOTPRINT_CSS_VARIABLE]: `${DEFAULT_AI_CANVAS_NAV_FOOTPRINT_PX}px`,
   }
@@ -586,7 +596,8 @@ export function AiCanvas() {
           imageDisplayPreset={displayPreferences.imageDisplayPreset}
           canvasItems={canvasItems}
           focusRequest={focusRequest}
-          isGenerating={isGenerating || isConversationLoading}
+          isGenerating={isCanvasGenerating}
+          pendingMessages={pendingMessages}
           selectedItemId={selectedItemId}
           onCanvasItemsChange={setCanvasItems}
           onAssetSelect={handleSelectAsset}

@@ -1,4 +1,4 @@
-import { proxyWorkerRequest } from "@/lib/worker-proxy"
+import { readDrawTask } from "@/lib/mock-api"
 
 export const runtime = "nodejs"
 
@@ -11,8 +11,5 @@ type RouteContext = {
 export async function GET(_request: Request, context: RouteContext) {
   const { taskId } = await context.params
 
-  return proxyWorkerRequest({
-    path: `/draw-tasks/${encodeURIComponent(taskId)}`,
-    method: "GET",
-  })
+  return readDrawTask(taskId)
 }

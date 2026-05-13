@@ -83,6 +83,37 @@ export type CanvasItem = {
   height: number
 }
 
+export type PendingImagePlaceholder = {
+  detail: string
+  id: string
+  imageIndex: number
+  indexLabel?: string
+  isAutoSize: boolean
+  model: string
+  outputCount: number
+  prompt: string | null
+  quality: string
+  ratio: string
+  size: {
+    width: number
+    height: number
+  }
+  sizeLabel: string
+  status: "pending" | "running"
+  title: string
+}
+
+export type FailedImagePlaceholder = {
+  errorMessage: string
+  isAutoSize: boolean
+  model: string
+  prompt: string | null
+  quality: string
+  ratio: string
+  sizeLabel: string
+  title: string
+}
+
 export const models = [
   { value: "gpt-image-2", label: "GPT Image 2" },
   { value: "gpt-image-1.5", label: "GPT Image 1.5" },
@@ -97,3 +128,85 @@ export const promptSeeds = [
   "未来感城市屋顶花园，雨后夜景，霓虹反射，电影级广角构图",
   "为 AI 画布应用设计一个干净的应用图标，白底，精致几何形态",
 ]
+
+export function resolveGeneratedImageSize(size?: string) {
+  if (size === "1536x1024") {
+    return { width: 1536, height: 1024 }
+  }
+
+  if (size === "1024x1536") {
+    return { width: 1024, height: 1536 }
+  }
+
+  return { width: 1024, height: 1024 }
+}
+
+export function resolveGeneratedImageAspectRatio(size?: string) {
+  const dimensions = resolveGeneratedImageSize(size)
+
+  return `${dimensions.width} / ${dimensions.height}`
+}
+
+export function buildPendingImagePlaceholders(
+  messages: ConversationMessage[],
+): PendingImagePlaceholder[] {
+  return messages.flatMap((message) => buildPendingImagePlaceholdersForMessage(message))
+}
+
+export function buildPendingImagePlaceholdersForMessage(
+  message: ConversationMessage,
+): PendingImagePlaceholder[] {
+  if (
+    message.role !== "assistant" ||
+    (message.status !== "pending" && message.status !== "running") ||
+    !message.task
+  ) {
+    return []
+  }
+
+  const count = Math.max(message.task.outputCount ?? 1, 1)
+  const sizeLabel = message.task.size || "auto"
+  const size = resolveGeneratedImageSize(message.task.size)
+  const ratio = resolveGeneratedImageAspectRatio(message.task.size)
+  const prompt = message.task.prompt ?? message.text
+  const status = message.status === "running" ? "running" : "pending"
+
+  return Array.from({ length: count }, (_, index) => ({
+    detail:
+      status === "pending"
+        ? "任务已创建，等待调度。"
+        : "结果会自动回填到这条消息。",
+    id: `${message.id}-${index}`,
+    imageIndex: index + 1,
+    indexLabel: count > 1 ? `图 ${index + 1} / ${count}` : undefined,
+    isAutoSize: sizeLabel === "auto",
+    model: message.task?.model ?? "",
+    outputCount: count,
+    prompt,
+    quality: message.task?.quality ?? "",
+    ratio,
+    size,
+    sizeLabel,
+    status,
+    title: `第 ${index + 1} 张图像占位`,
+  }))
+}
+
+export function buildFailedImagePlaceholderForMessage(
+  message: ConversationMessage,
+): FailedImagePlaceholder | null {
+  if (message.role !== "assistant" || message.status !== "failed" || !message.task) {
+    return null
+  }
+
+  return {
+    errorMessage: message.task.errorMessage || "任务执行失败。",
+    isAutoSize: (message.task.size || "auto") === "auto",
+    model: message.task.model ?? "",
+    prompt: message.task.prompt ?? message.text,
+    quality: message.task.quality ?? "",
+    ratio: resolveGeneratedImageAspectRatio(message.task.size),
+    sizeLabel: message.task.size || "auto",
+    title: "生成失败结果卡",
+  }
+}

@@ -10,12 +10,18 @@ import {
 } from "lucide-react"
 
 import {
+  buildFailedImagePlaceholderForMessage,
+  buildPendingImagePlaceholdersForMessage,
   ConversationMessage,
   DrawTaskRecord,
   GeneratedImageView,
   ImageAsset,
 } from "./canvas-types"
-import { GeneratedImagePresetCard } from "./generated-image-card"
+import {
+  FailedGeneratedImageCard,
+  GeneratedImagePlaceholderCard,
+  GeneratedImagePresetCard,
+} from "./generated-image-card"
 import {
   GeneratedImageDisplayFieldOverrides,
   GeneratedImageDisplayPresetKey,
@@ -35,6 +41,103 @@ type ConversationTimelineProps = {
   onMessageSelect: (message: ConversationMessage) => void
   onRetryTask: (task: DrawTaskRecord) => void
   onUseTaskAsDraft: (task: DrawTaskRecord) => void
+}
+
+type MessageStatusPresentation = {
+  actionAvailability: {
+    retry: boolean
+    useDraft: boolean
+  }
+  accentTextClassName: string
+  assetStatusLabel: string
+  icon: React.ComponentType<{ className?: string }>
+  iconContainerClassName: string
+  iconClassName?: string
+  kindLabel: string
+  statusLabel: string
+}
+
+type AssistantBodyContext = {
+  imageDisplayFields: GeneratedImageDisplayFieldOverrides
+  imageDisplayPreset: GeneratedImageDisplayPresetKey
+  images: GeneratedImageView[]
+  message: ConversationMessage
+  onAssetSelect: (asset: ImageAsset) => void
+  presentation: MessageStatusPresentation
+}
+
+const assistantStatusPresentations: Record<
+  Exclude<ConversationMessage["status"], "failed"> | "failed",
+  MessageStatusPresentation
+> = {
+  pending: {
+    actionAvailability: {
+      retry: false,
+      useDraft: true,
+    },
+    accentTextClassName: "text-[oklch(0.48_0.05_82)]",
+    assetStatusLabel: "等待执行",
+    icon: LoaderCircle,
+    iconClassName: "animate-spin",
+    iconContainerClassName:
+      "border-[oklch(0.8_0.03_88)] bg-[oklch(0.978_0.012_92)] text-[oklch(0.45_0.06_82)]",
+    kindLabel: "Result",
+    statusLabel: "等待执行",
+  },
+  running: {
+    actionAvailability: {
+      retry: false,
+      useDraft: true,
+    },
+    accentTextClassName: "text-[oklch(0.46_0.08_168)]",
+    assetStatusLabel: "正在生成",
+    icon: LoaderCircle,
+    iconClassName: "animate-spin",
+    iconContainerClassName:
+      "border-[oklch(0.78_0.035_168)] bg-[oklch(0.968_0.02_168)] text-[oklch(0.42_0.08_168)]",
+    kindLabel: "Result",
+    statusLabel: "生成中",
+  },
+  failed: {
+    actionAvailability: {
+      retry: true,
+      useDraft: true,
+    },
+    accentTextClassName: "text-[oklch(0.5_0.08_28)]",
+    assetStatusLabel: "失败",
+    icon: TriangleAlert,
+    iconContainerClassName:
+      "border-[oklch(0.78_0.08_28)] bg-[oklch(0.975_0.022_28)] text-[oklch(0.42_0.14_28)]",
+    kindLabel: "Result",
+    statusLabel: "生成失败",
+  },
+  succeeded: {
+    actionAvailability: {
+      retry: true,
+      useDraft: true,
+    },
+    accentTextClassName: "text-[oklch(0.44_0.03_245)]",
+    assetStatusLabel: "结果已返回",
+    icon: Sparkles,
+    iconContainerClassName:
+      "border-[oklch(0.83_0.02_245)] bg-[oklch(0.97_0.008_245)] text-[oklch(0.42_0.04_245)]",
+    kindLabel: "Result",
+    statusLabel: "结果已返回",
+  },
+}
+
+const userMessagePresentation: MessageStatusPresentation = {
+  actionAvailability: {
+    retry: false,
+    useDraft: false,
+  },
+  accentTextClassName: "text-[oklch(0.42_0.03_245)]",
+  assetStatusLabel: "",
+  icon: MessageSquareQuote,
+  iconContainerClassName:
+    "border-[oklch(0.72_0.04_72)] bg-[oklch(0.97_0.018_88)] text-[oklch(0.45_0.05_68)]",
+  kindLabel: "Prompt",
+  statusLabel: "用户输入",
 }
 
 export function ConversationTimeline({
@@ -135,6 +238,10 @@ function MessageCard({
 }) {
   const isUser = message.role === "user"
   const isAssistant = message.role === "assistant"
+  const presentation = getMessageStatusPresentation(message)
+  const HeaderIcon = presentation.icon
+  const isRetryDisabled = isBusy || !presentation.actionAvailability.retry
+  const isUseDraftDisabled = !presentation.actionAvailability.useDraft
   const cardClassName = [
     "rounded-[22px] border px-4 py-4 text-left shadow-sm transition",
     isUser
@@ -157,28 +264,22 @@ function MessageCard({
             <span
               className={[
                 "flex size-8 items-center justify-center rounded-full border",
-                isUser
-                  ? "border-[oklch(0.72_0.04_72)] bg-[oklch(0.97_0.018_88)] text-[oklch(0.45_0.05_68)]"
-                  : "border-[oklch(0.83_0.02_245)] bg-[oklch(0.97_0.008_245)] text-[oklch(0.42_0.04_245)]",
+                presentation.iconContainerClassName,
               ].join(" ")}
             >
-              {isUser ? (
-                <MessageSquareQuote className="size-4" />
-              ) : message.status === "failed" ? (
-                <TriangleAlert className="size-4" />
-              ) : message.status === "pending" ||
-                message.status === "running" ? (
-                <LoaderCircle className="size-4 animate-spin" />
-              ) : (
-                <Sparkles className="size-4" />
-              )}
+              <HeaderIcon
+                className={[
+                  "size-4",
+                  presentation.iconClassName ?? "",
+                ].join(" ")}
+              />
             </span>
             <div>
               <p className="text-xs font-semibold tracking-[0.12em] text-[oklch(0.42_0.03_245)] uppercase">
-                {isUser ? "Prompt" : "Result"}
+                {presentation.kindLabel}
               </p>
-              <p className="mt-0.5 text-[11px] text-[oklch(0.5_0.02_245)]">
-                {formatStatusLabel(message)}
+              <p className={["mt-0.5 text-[11px]", presentation.accentTextClassName].join(" ")}>
+                {presentation.statusLabel}
               </p>
             </div>
           </div>
@@ -198,13 +299,13 @@ function MessageCard({
       {isAssistant && message.task ? (
         <div className="mt-4 flex flex-wrap gap-2">
           <ActionButton
-            disabled={isBusy}
+            disabled={isRetryDisabled}
             icon={RotateCcw}
             label="重试本轮"
             onClick={() => onRetryTask(message.task!)}
           />
           <ActionButton
-            disabled={false}
+            disabled={isUseDraftDisabled}
             icon={PencilLine}
             label="回填参数"
             onClick={() => onUseTaskAsDraft(message.task!)}
@@ -262,22 +363,138 @@ function AssistantMessageBody({
   imageDisplayPreset: GeneratedImageDisplayPresetKey
   onAssetSelect: (asset: ImageAsset) => void
 }) {
-  if (message.status === "failed") {
-    return (
-      <div className="mt-3 rounded-2xl border border-[oklch(0.82_0.06_28)] bg-[oklch(0.97_0.03_28)] px-3 py-2 text-xs leading-5 text-[oklch(0.4_0.12_28)]">
-        {message.task?.errorMessage || "任务执行失败。"}
-      </div>
-    )
+  const presentation = getMessageStatusPresentation(message)
+  const context: AssistantBodyContext = {
+    imageDisplayFields,
+    imageDisplayPreset,
+    images,
+    message,
+    onAssetSelect,
+    presentation,
   }
 
-  if (message.status === "pending" || message.status === "running") {
-    return (
-      <div className="mt-3 rounded-2xl border border-dashed border-[oklch(0.8_0.02_245)] bg-[oklch(0.985_0.006_245)] px-3 py-3 text-xs leading-5 text-[oklch(0.44_0.02_245)]">
-        正在生成图像，结果会自动回填到这条消息。
+  return renderAssistantBodyByStatus(context)
+}
+
+function EmptyTimeline({ isLoading }: { isLoading: boolean }) {
+  return (
+    <div className="flex h-full min-h-[240px] flex-col items-center justify-center rounded-[28px] border border-dashed border-[oklch(0.8_0.02_245)] bg-white/65 px-6 text-center">
+      <div className="flex size-12 items-center justify-center rounded-full border border-[oklch(0.82_0.02_245)] bg-[oklch(0.985_0.008_245)] text-[oklch(0.45_0.05_168)]">
+        {isLoading ? (
+          <LoaderCircle className="size-5 animate-spin" />
+        ) : (
+          <Sparkles className="size-5" />
+        )}
       </div>
-    )
+      <p className="mt-4 font-serif text-xl tracking-[-0.03em] text-[oklch(0.22_0.02_245)]">
+        {isLoading ? "正在载入会话" : "还没有消息"}
+      </p>
+      <p className="mt-2 text-sm leading-6 text-[oklch(0.44_0.02_245)]">
+        {isLoading
+          ? "正在恢复当前会话与任务状态。"
+          : "发送第一条提示词后，这里会展示每轮输入与对应的图片结果。"}
+      </p>
+    </div>
+  )
+}
+
+function getMessageStatusPresentation(
+  message: ConversationMessage,
+): MessageStatusPresentation {
+  if (message.role === "user") {
+    return userMessagePresentation
   }
 
+  return assistantStatusPresentations[message.status]
+}
+
+function renderAssistantBodyByStatus(context: AssistantBodyContext) {
+  const renderer = assistantBodyRenderers[context.message.status]
+
+  return renderer(context)
+}
+
+const assistantBodyRenderers: Record<
+  ConversationMessage["status"],
+  (context: AssistantBodyContext) => React.ReactNode
+> = {
+  pending: renderPendingAssistantBody,
+  running: renderPendingAssistantBody,
+  failed: renderFailedAssistantBody,
+  succeeded: renderSucceededAssistantBody,
+}
+
+function renderFailedAssistantBody({
+  message,
+  presentation,
+}: AssistantBodyContext) {
+  const failedPlaceholder = buildFailedImagePlaceholderForMessage(message)
+
+  if (!failedPlaceholder) {
+    return null
+  }
+
+  return (
+    <div className="mt-4 space-y-3">
+      <AssistantAssetsHeader
+        accentTextClassName={presentation.accentTextClassName}
+        statusLabel={presentation.assetStatusLabel}
+      />
+      <FailedGeneratedImageCard
+        autoSizeHint={failedPlaceholder.isAutoSize}
+        errorMessage={failedPlaceholder.errorMessage}
+        model={failedPlaceholder.model}
+        prompt={failedPlaceholder.prompt}
+        quality={failedPlaceholder.quality}
+        ratio={failedPlaceholder.ratio}
+        size={failedPlaceholder.sizeLabel}
+        title={failedPlaceholder.title}
+        variant="timeline"
+      />
+    </div>
+  )
+}
+
+function renderPendingAssistantBody({
+  message,
+  presentation,
+}: AssistantBodyContext) {
+  const placeholders = buildPendingImagePlaceholdersForMessage(message)
+
+  return (
+    <div className="mt-4 space-y-3">
+      <AssistantAssetsHeader
+        accentTextClassName={presentation.accentTextClassName}
+        statusLabel={presentation.assetStatusLabel}
+      />
+      <div className="grid grid-cols-2 gap-2">
+        {placeholders.map((placeholder) => (
+          <GeneratedImagePlaceholderCard
+            autoSizeHint={placeholder.isAutoSize}
+            detail={placeholder.detail}
+            indexLabel={placeholder.indexLabel}
+            key={placeholder.id}
+            model={placeholder.model}
+            prompt={placeholder.prompt}
+            quality={placeholder.quality}
+            ratio={placeholder.ratio}
+            size={placeholder.sizeLabel}
+            status={placeholder.status}
+            title={placeholder.title}
+            variant="timeline"
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function renderSucceededAssistantBody({
+  imageDisplayFields,
+  imageDisplayPreset,
+  images,
+  onAssetSelect,
+}: AssistantBodyContext) {
   if (images.length === 0) {
     return (
       <div className="mt-3 rounded-2xl border border-dashed border-[oklch(0.8_0.02_245)] bg-[oklch(0.985_0.006_245)] px-3 py-3 text-xs leading-5 text-[oklch(0.44_0.02_245)]">
@@ -288,15 +505,7 @@ function AssistantMessageBody({
 
   return (
     <div className="mt-4 space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[11px] font-semibold tracking-[0.12em] text-[oklch(0.44_0.03_245)] uppercase">
-          Assets
-        </p>
-        <p className="text-[11px] text-[oklch(0.54_0.02_245)]">
-          {images.length} 张
-        </p>
-      </div>
-
+      <AssistantAssetsHeader statusLabel={`${images.length} 张`} />
       <div className="grid grid-cols-2 gap-2">
         {images.map((image) => (
           <button
@@ -322,44 +531,26 @@ function AssistantMessageBody({
   )
 }
 
-function EmptyTimeline({ isLoading }: { isLoading: boolean }) {
+function AssistantAssetsHeader({
+  accentTextClassName = "text-[oklch(0.44_0.03_245)]",
+  statusLabel,
+}: {
+  accentTextClassName?: string
+  statusLabel: string
+}) {
   return (
-    <div className="flex h-full min-h-[240px] flex-col items-center justify-center rounded-[28px] border border-dashed border-[oklch(0.8_0.02_245)] bg-white/65 px-6 text-center">
-      <div className="flex size-12 items-center justify-center rounded-full border border-[oklch(0.82_0.02_245)] bg-[oklch(0.985_0.008_245)] text-[oklch(0.45_0.05_168)]">
-        {isLoading ? (
-          <LoaderCircle className="size-5 animate-spin" />
-        ) : (
-          <Sparkles className="size-5" />
-        )}
-      </div>
-      <p className="mt-4 font-serif text-xl tracking-[-0.03em] text-[oklch(0.22_0.02_245)]">
-        {isLoading ? "正在载入会话" : "还没有消息"}
+    <div className="flex items-center justify-between gap-3">
+      <p
+        className={[
+          "text-[11px] font-semibold tracking-[0.12em] uppercase",
+          accentTextClassName,
+        ].join(" ")}
+      >
+        Assets
       </p>
-      <p className="mt-2 text-sm leading-6 text-[oklch(0.44_0.02_245)]">
-        {isLoading
-          ? "正在恢复当前会话与任务状态。"
-          : "发送第一条提示词后，这里会展示每轮输入与对应的图片结果。"}
+      <p className={["text-[11px]", accentTextClassName].join(" ")}>
+        {statusLabel}
       </p>
     </div>
   )
-}
-
-function formatStatusLabel(message: ConversationMessage) {
-  if (message.role === "user") {
-    return "用户输入"
-  }
-
-  if (message.status === "pending") {
-    return "等待执行"
-  }
-
-  if (message.status === "running") {
-    return "生成中"
-  }
-
-  if (message.status === "failed") {
-    return "生成失败"
-  }
-
-  return "结果已返回"
 }

@@ -1,25 +1,19 @@
-import { proxyWorkerRequest } from "@/lib/worker-proxy"
+import {
+  clearProviderConfig,
+  getProviderConfig,
+  saveProviderConfig,
+} from "@/lib/mock-api"
 
 export const runtime = "nodejs"
 
 export async function GET() {
-  return proxyWorkerRequest({
-    path: "/provider-config",
-    method: "GET",
-  })
+  return getProviderConfig()
 }
 
 export async function POST(request: Request) {
-  return proxyWorkerRequest({
-    path: "/provider-config",
-    method: "POST",
-    request,
-  })
+  return saveProviderConfig(request)
 }
 
 export async function DELETE() {
-  return proxyWorkerRequest({
-    path: "/provider-config",
-    method: "DELETE",
-  })
+  return clearProviderConfig()
 }

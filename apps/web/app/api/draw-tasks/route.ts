@@ -1,18 +1,11 @@
-import { proxyWorkerRequest } from "@/lib/worker-proxy"
+import { createDrawTask, listDrawTasks } from "@/lib/mock-api"
 
 export const runtime = "nodejs"
 
 export async function GET() {
-  return proxyWorkerRequest({
-    path: "/draw-tasks",
-    method: "GET",
-  })
+  return listDrawTasks()
 }
 
 export async function POST(request: Request) {
-  return proxyWorkerRequest({
-    path: "/draw-tasks",
-    method: "POST",
-    request,
-  })
+  return createDrawTask(request)
 }
