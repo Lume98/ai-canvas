@@ -7,8 +7,8 @@ import { Button } from "@workspace/ui/components/button"
 
 import { SettingsForm } from "@/components/settings/settings-form"
 
-import { AiProviderConfig } from "./ai-config"
-import { CanvasDisplayPreferences } from "./display-preferences"
+import { AiProviderConfig } from "@/components/settings/ai-config"
+import { CanvasDisplayPreferences } from "@/components/settings/display-preferences"
 
 type FloatingCapsuleSettingsDialogProps = {
   isOpen: boolean

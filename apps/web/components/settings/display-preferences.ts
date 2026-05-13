@@ -6,7 +6,7 @@ import {
   getGeneratedImageDisplayPreset,
   isGeneratedImageDisplayPresetKey,
   resolveGeneratedImageDisplayPreset,
-} from "./generated-image-display-presets"
+} from "@/components/generated-image/generated-image-display-presets"
 
 export type CanvasDisplayPreferences = {
   imageDisplayFields: GeneratedImageDisplayFieldOverrides

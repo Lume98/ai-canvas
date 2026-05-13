@@ -9,7 +9,7 @@ import { cn } from "@workspace/ui/lib/utils"
 import {
   PendingImagePlaceholder,
   GeneratedImageView,
-} from "./canvas-types"
+} from "@/components/generated-image/generated-image-types"
 import {
   GeneratedImageDisplayFieldOverrides,
   GeneratedImageDisplayPresetKey,
@@ -17,7 +17,7 @@ import {
   ResolvedGeneratedImageInfoPreset,
   getGeneratedImageDisplayPreset,
   resolveGeneratedImageDisplayPreset,
-} from "./generated-image-display-presets"
+} from "@/components/generated-image/generated-image-display-presets"
 
 type GeneratedImageCardProps = {
   className?: string

@@ -2,7 +2,7 @@ import {
   Conversation,
   ConversationMessage,
   DrawTaskRecord,
-} from "@/components/canvas/canvas-types"
+} from "@/components/conversation/conversation-types"
 
 type ApiErrorPayload = {
   error?: string

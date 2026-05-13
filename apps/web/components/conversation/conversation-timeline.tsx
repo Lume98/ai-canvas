@@ -10,22 +10,26 @@ import {
 } from "lucide-react"
 
 import {
-  buildFailedImagePlaceholderForMessage,
-  buildPendingImagePlaceholdersForMessage,
   ConversationMessage,
   DrawTaskRecord,
+} from "@/components/conversation/conversation-types"
+import {
+  buildFailedImagePlaceholderForMessage,
+  buildPendingImagePlaceholdersForMessage,
+} from "@/components/conversation/conversation-placeholders"
+import type { ImageAsset } from "@/components/domain/asset-types"
+import {
   GeneratedImageView,
-  ImageAsset,
-} from "./canvas-types"
+} from "@/components/generated-image/generated-image-types"
 import {
   FailedGeneratedImageCard,
   GeneratedImagePlaceholderCard,
   GeneratedImagePresetCard,
-} from "./generated-image-card"
+} from "@/components/generated-image/generated-image-card"
 import {
   GeneratedImageDisplayFieldOverrides,
   GeneratedImageDisplayPresetKey,
-} from "./generated-image-display-presets"
+} from "@/components/generated-image/generated-image-display-presets"
 
 type ConversationTimelineProps = {
   className?: string

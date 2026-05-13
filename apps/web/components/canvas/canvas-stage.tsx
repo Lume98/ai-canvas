@@ -11,20 +11,22 @@ import { ImageIcon } from "lucide-react"
 
 import { CanvasDotGrid } from "./canvas-dot-grid"
 import {
-  buildPendingImagePlaceholders,
-  CanvasItem,
   ConversationMessage,
+} from "@/components/conversation/conversation-types"
+import { buildPendingImagePlaceholders } from "@/components/conversation/conversation-placeholders"
+import type { CanvasItem } from "@/components/canvas/canvas-types"
+import type { ImageAsset } from "@/components/domain/asset-types"
+import type {
   GeneratedImageView,
-  ImageAsset,
-} from "./canvas-types"
+} from "@/components/generated-image/generated-image-types"
 import {
   GeneratedImagePlaceholderCard,
   GeneratedImagePresetCard,
-} from "./generated-image-card"
+} from "@/components/generated-image/generated-image-card"
 import {
   GeneratedImageDisplayFieldOverrides,
   GeneratedImageDisplayPresetKey,
-} from "./generated-image-display-presets"
+} from "@/components/generated-image/generated-image-display-presets"
 
 const MIN_SCALE = 0.1
 const MAX_SCALE = 4

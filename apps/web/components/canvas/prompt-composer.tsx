@@ -15,7 +15,7 @@ import {
   PromptInputTools,
 } from "@/components/ai-elements/prompt-input"
 
-import { models, qualities, sizes } from "./canvas-types"
+import { models, qualities, sizes } from "@/components/generated-image/generated-image-types"
 
 type ParameterSelectName = "model" | "size" | "quality"
 

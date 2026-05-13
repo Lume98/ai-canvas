@@ -3,8 +3,8 @@
 import { type RefObject, useEffect, useId, useRef, useState } from "react"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { AiProviderConfig } from "./ai-config"
-import { CanvasDisplayPreferences } from "./display-preferences"
+import { AiProviderConfig } from "@/components/settings/ai-config"
+import { CanvasDisplayPreferences } from "@/components/settings/display-preferences"
 import { FloatingCapsuleNavButton } from "./floating-capsule-nav-button"
 import { useCapsuleNavFootprint } from "./floating-capsule-nav-layout"
 import {
@@ -12,11 +12,12 @@ import {
   type FloatingPanelKey,
   useFloatingCapsulePanels,
 } from "./floating-capsule-nav-panels"
-import { FloatingCapsuleSettingsDialog } from "./floating-capsule-settings-dialog"
-import { GeneratedImageDisplayPresetKey } from "./generated-image-display-presets"
+import { FloatingCapsuleSettingsDialog } from "@/components/settings/floating-capsule-settings-dialog"
+import { GeneratedImageDisplayPresetKey } from "@/components/generated-image/generated-image-display-presets"
 import { aiCanvasCapsuleRailPositionClassName } from "./layout-tokens"
-import { GeneratedImageView, HistoryResult } from "./canvas-types"
-import { ConversationMessage, DrawTaskRecord, ImageAsset } from "./canvas-types"
+import { GeneratedImageView, HistoryResult } from "@/components/generated-image/generated-image-types"
+import { ImageAsset } from "@/components/domain/asset-types"
+import { ConversationMessage, DrawTaskRecord } from "@/components/conversation/conversation-types"
 
 type FloatingPanel = FloatingPanelKey | null
 

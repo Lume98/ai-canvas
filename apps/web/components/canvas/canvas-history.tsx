@@ -1,9 +1,9 @@
-import { HistoryResult } from "./canvas-types"
-import { GeneratedImagePresetCard } from "./generated-image-card"
+import { HistoryResult } from "@/components/generated-image/generated-image-types"
+import { GeneratedImagePresetCard } from "@/components/generated-image/generated-image-card"
 import {
   GeneratedImageDisplayFieldOverrides,
   GeneratedImageDisplayPresetKey,
-} from "./generated-image-display-presets"
+} from "@/components/generated-image/generated-image-display-presets"
 
 type CanvasHistoryProps = {
   imageDisplayFields: GeneratedImageDisplayFieldOverrides

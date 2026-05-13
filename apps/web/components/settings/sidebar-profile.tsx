@@ -7,7 +7,7 @@ import { Button } from "@workspace/ui/components/button"
 
 import { SettingsForm } from "@/components/settings/settings-form"
 
-import { AiProviderConfig } from "./ai-config"
+import { AiProviderConfig } from "@/components/settings/ai-config"
 
 type SidebarProfileProps = {
   onConfigChange?: (config: AiProviderConfig) => void

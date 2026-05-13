@@ -13,13 +13,14 @@ import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { CanvasHistory } from "./canvas-history"
-import { ConversationTimeline } from "./conversation-timeline"
-import { GeneratedImageView, HistoryResult } from "./canvas-types"
-import { ConversationMessage, DrawTaskRecord, ImageAsset } from "./canvas-types"
+import { ConversationTimeline } from "@/components/conversation/conversation-timeline"
+import { GeneratedImageView, HistoryResult } from "@/components/generated-image/generated-image-types"
+import { ImageAsset } from "@/components/domain/asset-types"
+import { ConversationMessage, DrawTaskRecord } from "@/components/conversation/conversation-types"
 import {
   GeneratedImageDisplayFieldOverrides,
   GeneratedImageDisplayPresetKey,
-} from "./generated-image-display-presets"
+} from "@/components/generated-image/generated-image-display-presets"
 
 export const floatingPanels = [
   "profile",
