@@ -10,7 +10,10 @@ import {
 } from "@/components/generated-image/generated-image-types"
 import type { ImageAsset } from "@/components/domain/asset-types"
 import { CanvasItem } from "@/components/canvas/canvas-types"
-import { readDrawTask } from "@/components/conversation/conversation-api"
+import {
+  isConversationNotFoundError,
+  readDrawTask,
+} from "@/components/conversation/conversation-api"
 
 export function collectConversationAssets(messages: ConversationMessage[]): ImageAsset[] {
   return messages.flatMap((message) =>
@@ -178,7 +181,7 @@ export function applySetStateAction<T>(current: T, next: SetStateAction<T>): T {
 }
 
 export function existingConversationErrorNeedsReset(error: unknown) {
-  return error instanceof Error && /会话不存在/.test(error.message)
+  return isConversationNotFoundError(error)
 }
 
 export function resolveNextSelectedMessageId(

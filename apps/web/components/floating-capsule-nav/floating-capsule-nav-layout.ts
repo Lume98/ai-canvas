@@ -1,6 +1,6 @@
 import { RefObject, useLayoutEffect } from "react"
 
-import { AI_CANVAS_NAV_FOOTPRINT_CSS_VARIABLE } from "./layout-tokens"
+import { AI_CANVAS_NAV_FOOTPRINT_CSS_VARIABLE } from "@/components/canvas/layout-tokens"
 
 export function useCapsuleNavFootprint({
   layoutRootRef,

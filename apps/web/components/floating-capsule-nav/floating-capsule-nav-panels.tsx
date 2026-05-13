@@ -12,7 +12,7 @@ import {
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { CanvasHistory } from "./canvas-history"
+import { CanvasHistory } from "@/components/canvas/canvas-history"
 import { ConversationTimeline } from "@/components/conversation/conversation-timeline"
 import { GeneratedImageView, HistoryResult } from "@/components/generated-image/generated-image-types"
 import { ImageAsset } from "@/components/domain/asset-types"

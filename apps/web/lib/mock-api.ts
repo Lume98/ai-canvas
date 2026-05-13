@@ -181,7 +181,7 @@ export function readConversation(conversationId: string) {
   const conversation = state.conversations.get(conversationId)
 
   if (!conversation) {
-    return errorResponse("会话不存在。", 404)
+    return conversationNotFoundResponse()
   }
 
   return NextResponse.json({ conversation: cloneConversation(conversation) })
@@ -191,7 +191,7 @@ export function readConversationMessages(conversationId: string) {
   hydrateSettledTasks()
 
   if (!state.conversations.has(conversationId)) {
-    return errorResponse("会话不存在。", 404)
+    return conversationNotFoundResponse()
   }
 
   return NextResponse.json({
@@ -221,7 +221,7 @@ export async function createDrawTask(request: Request) {
   const conversation = state.conversations.get(input.conversationId)
 
   if (!conversation) {
-    return errorResponse("会话不存在。", 404)
+    return conversationNotFoundResponse()
   }
 
   const createdTask = appendTaskToConversation(input, conversation)
@@ -801,8 +801,12 @@ function stringifyOptionalField(value: unknown) {
   return typeof value === "string" ? value : undefined
 }
 
-function errorResponse(error: string, status: number) {
-  return NextResponse.json({ error }, { status })
+function conversationNotFoundResponse() {
+  return errorResponse("会话不存在。", 404, "CONVERSATION_NOT_FOUND")
+}
+
+function errorResponse(error: string, status: number, code?: string) {
+  return NextResponse.json({ error, ...(code ? { code } : {}) }, { status })
 }
 
 function buildId(prefix: string) {

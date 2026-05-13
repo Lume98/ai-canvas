@@ -1,4 +1,5 @@
 import { FormEvent, SetStateAction, useEffect, useMemo, useRef } from "react"
+import { usePathname, useRouter } from "next/navigation"
 import { useImmerReducer } from "use-immer"
 
 import {
@@ -44,6 +45,13 @@ import {
 } from "@/components/canvas/ai-canvas-utils"
 
 const CURRENT_CONVERSATION_STORAGE_KEY = "canvas/current-conversation-id"
+
+type ConversationSyncResult = {
+  conversationId: string
+  messages: ConversationMessage[]
+}
+
+type CancellationGuard = () => boolean
 
 type AiCanvasState = {
   providerConfig: typeof defaultAiProviderConfig
@@ -94,6 +102,8 @@ const initialAiCanvasState: AiCanvasState = {
 }
 
 export function useAiCanvasController(initialConversationId: string | null = null) {
+  const router = useRouter()
+  const pathname = usePathname()
   const [state, dispatch] = useImmerReducer(
     (draft: AiCanvasState, action: AiCanvasAction) => {
       action(draft)
@@ -102,6 +112,7 @@ export function useAiCanvasController(initialConversationId: string | null = nul
   )
 
   const layoutRootRef = useRef<HTMLElement | null>(null)
+  const activeConversationIdRef = useRef<string | null>(null)
   const pendingTaskIdsRef = useRef<Set<string>>(new Set())
   const pendingFocusAssetIdRef = useRef<string | null>(null)
 
@@ -258,15 +269,161 @@ export function useAiCanvasController(initialConversationId: string | null = nul
       : branchSourceCompatibleModels[0]
   }
 
-  async function refreshMessages(targetConversationId: string, cancelled: boolean) {
-    const nextMessages = await readConversationMessages(targetConversationId)
-    if (cancelled) return
+  function persistConversationId(nextConversationId: string) {
+    if (typeof window === "undefined") return
+
+    window.localStorage.setItem(CURRENT_CONVERSATION_STORAGE_KEY, nextConversationId)
+  }
+
+  function syncConversationLocation(nextConversationId: string) {
+    const nextPathname = `/${encodeURIComponent(nextConversationId)}`
+    if (pathname === nextPathname) return
+
+    router.replace(nextPathname, { scroll: false })
+  }
+
+  function resetConversationScopedState() {
+    pendingTaskIdsRef.current.clear()
+    pendingFocusAssetIdRef.current = null
+    setMessages([])
+    setCanvasItems([])
+    setSelectedItemId(null)
+    setGenerationSourceAssetId(null)
+    setBranchMode(defaultBranchMode)
+    setSelectedMessageId(null)
+    setFocusRequest(null)
+  }
+
+  function clearActiveConversation() {
+    activeConversationIdRef.current = null
+    setConversationId(null)
+    resetConversationScopedState()
+  }
+
+  function activateConversation(nextConversationId: string) {
+    const previousConversationId = activeConversationIdRef.current
+
+    activeConversationIdRef.current = nextConversationId
+    persistConversationId(nextConversationId)
+    setConversationId(nextConversationId)
+
+    if (previousConversationId !== nextConversationId) {
+      resetConversationScopedState()
+    }
+
+    syncConversationLocation(nextConversationId)
+  }
+
+  function applyConversationMessages(
+    targetConversationId: string,
+    nextMessages: ConversationMessage[],
+    isCancelled: CancellationGuard = () => false,
+  ): ConversationSyncResult | null {
+    if (isCancelled() || activeConversationIdRef.current !== targetConversationId) return null
 
     setMessages(nextMessages)
     setSelectedMessageId((currentSelectedMessageId) =>
       resolveNextSelectedMessageId(currentSelectedMessageId, nextMessages),
     )
     restorePendingTasks(nextMessages, targetConversationId)
+
+    return {
+      conversationId: targetConversationId,
+      messages: nextMessages,
+    }
+  }
+
+  async function recoverConversation(
+    targetConversationId: string,
+    isCancelled: CancellationGuard = () => false,
+  ): Promise<ConversationSyncResult | null> {
+    if (isCancelled() || activeConversationIdRef.current !== targetConversationId) return null
+
+    const conversation = await createConversation("当前画图会话")
+    if (isCancelled() || activeConversationIdRef.current !== targetConversationId) return null
+
+    activateConversation(conversation.id)
+    setError("")
+
+    const recoveredMessages = await readConversationMessages(conversation.id)
+    return applyConversationMessages(conversation.id, recoveredMessages, isCancelled)
+  }
+
+  async function createAndActivateConversation(
+    isCancelled: CancellationGuard = () => false,
+  ): Promise<ConversationSyncResult | null> {
+    const conversation = await createConversation("当前画图会话")
+    if (isCancelled()) return null
+
+    const nextMessages = await readConversationMessages(conversation.id)
+    if (isCancelled()) return null
+
+    activateConversation(conversation.id)
+    setError("")
+
+    return applyConversationMessages(conversation.id, nextMessages, isCancelled)
+  }
+
+  async function activateExistingConversationOrRecover(
+    targetConversationId: string,
+    isCancelled: CancellationGuard = () => false,
+  ): Promise<ConversationSyncResult | null> {
+    try {
+      const nextMessages = await readConversationMessages(targetConversationId)
+      if (isCancelled()) return null
+
+      activateConversation(targetConversationId)
+      setError("")
+
+      return applyConversationMessages(targetConversationId, nextMessages, isCancelled)
+    } catch (caughtError) {
+      if (isCancelled()) return null
+      if (!existingConversationErrorNeedsReset(caughtError)) throw caughtError
+
+      return createAndActivateConversation(isCancelled)
+    }
+  }
+
+  async function loadConversationMessages(
+    targetConversationId: string,
+    options: {
+      isCancelled?: CancellationGuard
+      recoverOnMissing?: boolean
+    },
+  ): Promise<ConversationSyncResult | null> {
+    const isCancelled = options.isCancelled ?? (() => false)
+
+    if (isCancelled() || activeConversationIdRef.current !== targetConversationId) {
+      return null
+    }
+
+    try {
+      const nextMessages = await readConversationMessages(targetConversationId)
+      return applyConversationMessages(targetConversationId, nextMessages, isCancelled)
+    } catch (caughtError) {
+      if (isCancelled() || activeConversationIdRef.current !== targetConversationId) {
+        return null
+      }
+
+      if (
+        !options.recoverOnMissing ||
+        !existingConversationErrorNeedsReset(caughtError)
+      ) {
+        throw caughtError
+      }
+
+      return recoverConversation(targetConversationId, isCancelled)
+    }
+  }
+
+  async function refreshMessages(
+    targetConversationId: string,
+    isCancelled: CancellationGuard = () => false,
+  ) {
+    await loadConversationMessages(targetConversationId, {
+      isCancelled,
+      recoverOnMissing: true,
+    })
   }
 
   useEffect(() => {
@@ -300,18 +457,12 @@ export function useAiCanvasController(initialConversationId: string | null = nul
 
   useEffect(() => {
     let cancelled = false
-
-    async function loadMessagesForConversation(targetConversationId: string) {
-      const nextMessages = await readConversationMessages(targetConversationId)
-      if (cancelled) return
-
-      setMessages(nextMessages)
-      setSelectedMessageId((currentSelectedMessageId) =>
-        resolveNextSelectedMessageId(currentSelectedMessageId, nextMessages),
-      )
-    }
+    const isCancelled = () => cancelled
 
     async function ensureConversation() {
+      setIsConversationLoading(true)
+      setError("")
+
       try {
         const existingConversationIdFromStorage =
           typeof window === "undefined"
@@ -322,45 +473,29 @@ export function useAiCanvasController(initialConversationId: string | null = nul
 
         if (!activeConversationId) {
           const conversations = await listConversations()
+          if (isCancelled()) return
           activeConversationId =
-            conversations[0]?.id ?? (await createConversation("当前画图会话")).id
+            conversations[0]?.id ?? null
         }
 
-        if (typeof window !== "undefined") {
-          window.localStorage.setItem(CURRENT_CONVERSATION_STORAGE_KEY, activeConversationId)
+        if (isCancelled()) return
+
+        if (!activeConversationId) {
+          await createAndActivateConversation(isCancelled)
+          return
         }
 
-        if (cancelled) return
+        if (activeConversationIdRef.current !== activeConversationId) {
+          clearActiveConversation()
+        }
 
-        setConversationId(activeConversationId)
-        await loadMessagesForConversation(activeConversationId)
+        await activateExistingConversationOrRecover(activeConversationId, isCancelled)
       } catch (caughtError) {
-        if (existingConversationErrorNeedsReset(caughtError) && !cancelled) {
-          try {
-            const conversation = await createConversation("当前画图会话")
-
-            if (typeof window !== "undefined") {
-              window.localStorage.setItem(CURRENT_CONVERSATION_STORAGE_KEY, conversation.id)
-            }
-
-            setConversationId(conversation.id)
-            await loadMessagesForConversation(conversation.id)
-            return
-          } catch (retryError) {
-            if (!cancelled) {
-              setError(
-                retryError instanceof Error ? retryError.message : "初始化会话失败。",
-              )
-            }
-            return
-          }
-        }
-
-        if (!cancelled) {
+        if (!isCancelled()) {
           setError(caughtError instanceof Error ? caughtError.message : "初始化会话失败。")
         }
       } finally {
-        if (!cancelled) setIsConversationLoading(false)
+        if (!isCancelled()) setIsConversationLoading(false)
       }
     }
 
@@ -425,11 +560,12 @@ export function useAiCanvasController(initialConversationId: string | null = nul
       void pollConversationTaskUntilSettled(taskId, activeConversationId, {
         onSettled: async (task) => {
           pendingTaskIdsRef.current.delete(taskId)
-          const nextMessages = await readConversationMessages(activeConversationId)
-          setMessages(nextMessages)
-          setSelectedMessageId((currentSelectedMessageId) =>
-            resolveNextSelectedMessageId(currentSelectedMessageId, nextMessages),
-          )
+          const syncResult = await loadConversationMessages(activeConversationId, {
+            recoverOnMissing: true,
+          })
+          if (!syncResult || syncResult.conversationId !== activeConversationId) return
+
+          const { messages: nextMessages } = syncResult
           syncPendingTasks(nextMessages)
 
           if (task.status === "succeeded") {
@@ -497,11 +633,12 @@ export function useAiCanvasController(initialConversationId: string | null = nul
           void pollConversationTaskUntilSettled(taskId, targetConversationId, {
             onSettled: async (settledTask) => {
               pendingTaskIdsRef.current.delete(taskId)
-              const refreshedMessages = await readConversationMessages(targetConversationId)
-              setMessages(refreshedMessages)
-              setSelectedMessageId((currentSelectedMessageId) =>
-                resolveNextSelectedMessageId(currentSelectedMessageId, refreshedMessages),
-              )
+              const syncResult = await loadConversationMessages(targetConversationId, {
+                recoverOnMissing: true,
+              })
+              if (!syncResult || syncResult.conversationId !== targetConversationId) return
+
+              const { messages: refreshedMessages } = syncResult
               restorePendingTasks(refreshedMessages, targetConversationId)
 
               if (settledTask.status === "succeeded") {
@@ -527,14 +664,15 @@ export function useAiCanvasController(initialConversationId: string | null = nul
     branchMode?: BranchMode
     parentAssetId?: string | null
   }) {
-    if (!conversationId || !input.prompt.trim()) return
+    const requestedConversationId = activeConversationIdRef.current
+    if (!requestedConversationId || !input.prompt.trim()) return
 
     setIsGenerating(true)
     setError("")
 
-    try {
+    async function runGeneration(targetConversationId: string) {
       const task = await createConversationDrawTask({
-        conversationId,
+        conversationId: targetConversationId,
         prompt: input.prompt.trim(),
         model: input.model,
         size: input.size,
@@ -545,16 +683,17 @@ export function useAiCanvasController(initialConversationId: string | null = nul
       })
 
       pendingTaskIdsRef.current.add(task.id)
-      await refreshMessages(conversationId, false)
-      await pollConversationTaskUntilSettled(task.id, conversationId, {
+      await refreshMessages(targetConversationId)
+      await pollConversationTaskUntilSettled(task.id, targetConversationId, {
         onSettled: async (settledTask) => {
           pendingTaskIdsRef.current.delete(task.id)
-          const nextMessages = await readConversationMessages(conversationId)
-          setMessages(nextMessages)
-          setSelectedMessageId((currentSelectedMessageId) =>
-            resolveNextSelectedMessageId(currentSelectedMessageId, nextMessages),
-          )
-          restorePendingTasks(nextMessages, conversationId)
+          const syncResult = await loadConversationMessages(targetConversationId, {
+            recoverOnMissing: true,
+          })
+          if (!syncResult || syncResult.conversationId !== targetConversationId) return
+
+          const { messages: nextMessages } = syncResult
+          restorePendingTasks(nextMessages, targetConversationId)
 
           if (settledTask.status === "succeeded") {
             focusLatestTaskAsset(settledTask.id, nextMessages)
@@ -563,7 +702,27 @@ export function useAiCanvasController(initialConversationId: string | null = nul
           }
         },
       })
+    }
+
+    try {
+      await runGeneration(requestedConversationId)
     } catch (caughtError) {
+      if (existingConversationErrorNeedsReset(caughtError)) {
+        try {
+          const recoveredConversation = await recoverConversation(
+            requestedConversationId,
+          )
+
+          if (recoveredConversation) {
+            await runGeneration(recoveredConversation.conversationId)
+            return
+          }
+        } catch (retryError) {
+          setError(retryError instanceof Error ? retryError.message : "生成失败，请稍后重试。")
+          return
+        }
+      }
+
       setError(caughtError instanceof Error ? caughtError.message : "生成失败，请稍后重试。")
     } finally {
       setIsGenerating(false)

@@ -5,7 +5,7 @@ import { CSSProperties } from "react"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { CanvasStage } from "@/components/canvas/canvas-stage"
-import { FloatingCapsuleNav } from "@/components/canvas/floating-capsule-nav"
+import { FloatingCapsuleNav } from "@/components/floating-capsule-nav/floating-capsule-nav"
 import {
   AI_CANVAS_NAV_FOOTPRINT_CSS_VARIABLE,
   DEFAULT_AI_CANVAS_NAV_FOOTPRINT_PX,

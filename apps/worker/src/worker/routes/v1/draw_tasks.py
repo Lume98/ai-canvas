@@ -9,6 +9,8 @@ from worker.services import DrawTaskService, DrawTaskServiceError
 
 from .public_urls import with_public_result_urls
 
+CONVERSATION_NOT_FOUND_CODE = "CONVERSATION_NOT_FOUND"
+
 
 def register_draw_task_routes(router: APIRouter, draw_tasks: DrawTaskService) -> None:
     @router.get("/draw-tasks", tags=["Draw Tasks"])
@@ -42,7 +44,7 @@ def register_draw_task_routes(router: APIRouter, draw_tasks: DrawTaskService) ->
             task = draw_tasks.create_task_record(task_input)
         except DrawTaskServiceError as error:
             if str(error) == "会话不存在。":
-                return error_response(str(error), 404)
+                return error_response(str(error), 404, CONVERSATION_NOT_FOUND_CODE)
 
             return error_response(str(error), 500)
 

@@ -6,6 +6,8 @@ from fastapi.responses import JSONResponse, Response
 from worker.api import error_response
 from worker.services import DrawTaskService, DrawTaskServiceError
 
+CONVERSATION_NOT_FOUND_CODE = "CONVERSATION_NOT_FOUND"
+
 
 def register_conversation_routes(
     router: APIRouter,
@@ -27,7 +29,11 @@ def register_conversation_routes(
         conversation = draw_tasks.get_conversation(conversation_id)
 
         if not conversation:
-            return error_response("会话不存在。", 404)
+            return error_response(
+                "会话不存在。",
+                404,
+                CONVERSATION_NOT_FOUND_CODE,
+            )
 
         return JSONResponse({"conversation": conversation})
 

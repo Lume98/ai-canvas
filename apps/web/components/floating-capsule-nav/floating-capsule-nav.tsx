@@ -12,9 +12,9 @@ import {
   type FloatingPanelKey,
   useFloatingCapsulePanels,
 } from "./floating-capsule-nav-panels"
-import { FloatingCapsuleSettingsDialog } from "@/components/settings/floating-capsule-settings-dialog"
+import { FloatingCapsuleSettingsDialog } from "./floating-capsule-settings-dialog"
 import { GeneratedImageDisplayPresetKey } from "@/components/generated-image/generated-image-display-presets"
-import { aiCanvasCapsuleRailPositionClassName } from "./layout-tokens"
+import { aiCanvasCapsuleRailPositionClassName } from "@/components/canvas/layout-tokens"
 import { GeneratedImageView, HistoryResult } from "@/components/generated-image/generated-image-types"
 import { ImageAsset } from "@/components/domain/asset-types"
 import { ConversationMessage, DrawTaskRecord } from "@/components/conversation/conversation-types"

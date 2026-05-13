@@ -43,8 +43,17 @@ def extract_request_error_message(
     return validate_provider_config_input(payload)[1] or "Provider 配置无效。"
 
 
-def error_response(message: str | None, status_code: int) -> JSONResponse:
-    return JSONResponse({"error": message or "请求失败。"}, status_code=status_code)
+def error_response(
+    message: str | None,
+    status_code: int,
+    code: str | None = None,
+) -> JSONResponse:
+    payload = {"error": message or "请求失败。"}
+
+    if code:
+        payload["code"] = code
+
+    return JSONResponse(payload, status_code=status_code)
 
 
 def request_body_schema(request_model: type[BaseModel]) -> dict[str, Any]:

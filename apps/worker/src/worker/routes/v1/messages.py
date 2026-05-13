@@ -6,6 +6,8 @@ from worker.services import DrawTaskService
 
 from .public_urls import with_public_message_assets
 
+CONVERSATION_NOT_FOUND_CODE = "CONVERSATION_NOT_FOUND"
+
 
 def register_message_routes(
     router: APIRouter,
@@ -16,7 +18,11 @@ def register_message_routes(
         conversation = draw_tasks.get_conversation(conversation_id)
 
         if not conversation:
-            return error_response("会话不存在。", 404)
+            return error_response(
+                "会话不存在。",
+                404,
+                CONVERSATION_NOT_FOUND_CODE,
+            )
 
         messages = [
             with_public_message_assets(message)
