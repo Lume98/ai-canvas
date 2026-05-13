@@ -98,7 +98,7 @@ export function SettingsForm({
     return () => {
       isMounted = false
     }
-  }, [onConfigChange, onDisplayPreferencesChange])
+  }, [])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()

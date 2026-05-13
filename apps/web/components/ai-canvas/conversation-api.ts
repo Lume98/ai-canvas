@@ -12,6 +12,10 @@ type ConversationResponse = {
   conversation?: Conversation
 } & ApiErrorPayload
 
+type ConversationsResponse = {
+  conversations?: Conversation[]
+} & ApiErrorPayload
+
 type MessagesResponse = {
   messages?: ConversationMessage[]
 } & ApiErrorPayload
@@ -35,6 +39,19 @@ export async function createConversation(title?: string) {
   }
 
   return payload.conversation
+}
+
+export async function listConversations() {
+  const response = await fetch("/api/conversations", {
+    cache: "no-store",
+  })
+  const payload = (await response.json()) as ConversationsResponse
+
+  if (!response.ok || !payload.conversations) {
+    throw new Error(payload.error || "读取会话列表失败。")
+  }
+
+  return payload.conversations
 }
 
 export async function readConversation(conversationId: string) {

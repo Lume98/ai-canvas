@@ -12,6 +12,7 @@ import { CanvasStage, CanvasStageHandle } from "@/components/ai-canvas/canvas-st
 import {
   createConversation,
   createConversationDrawTask,
+  listConversations,
   readConversationMessages,
   readDrawTask,
 } from "@/components/ai-canvas/conversation-api"
@@ -29,6 +30,7 @@ import {
   models,
   promptSeeds,
   qualities,
+  resolveCanvasDisplaySize,
   sizes,
 } from "@/components/ai-canvas/canvas-types"
 import { FloatingCapsuleNav } from "@/components/ai-canvas/floating-capsule-nav"
@@ -46,7 +48,11 @@ type AiCanvasLayoutStyle = CSSProperties & {
   "--ai-canvas-nav-footprint": string
 }
 
-export function AiCanvas() {
+type AiCanvasProps = {
+  initialConversationId?: string | null
+}
+
+export function AiCanvas({ initialConversationId = null }: AiCanvasProps) {
   const [providerConfig, setProviderConfig] = useState(defaultAiProviderConfig)
   const [isConfigLoading, setIsConfigLoading] = useState(true)
   const [isConversationLoading, setIsConversationLoading] = useState(true)
@@ -151,7 +157,7 @@ export function AiCanvas() {
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [initialConversationId])
 
   useEffect(() => {
     setDisplayPreferences(readCanvasDisplayPreferences())
@@ -173,15 +179,18 @@ export function AiCanvas() {
 
     async function ensureConversation() {
       try {
-        const existingConversationId =
+        const existingConversationIdFromStorage =
           typeof window === "undefined"
             ? null
             : window.localStorage.getItem(CURRENT_CONVERSATION_STORAGE_KEY)
 
-        let activeConversationId = existingConversationId
+        let activeConversationId =
+          initialConversationId || existingConversationIdFromStorage
 
         if (!activeConversationId) {
-          activeConversationId = (await createConversation("当前画图会话")).id
+          const conversations = await listConversations()
+          activeConversationId =
+            conversations[0]?.id ?? (await createConversation("当前画图会话")).id
         }
 
         if (typeof window !== "undefined") {
@@ -247,31 +256,6 @@ export function AiCanvas() {
   useEffect(() => {
     syncCanvasItemsWithAssets(assets, setCanvasItems)
   }, [assets])
-
-  useEffect(() => {
-    const layoutRoot = layoutRootRef.current
-
-    if (!layoutRoot) return
-
-    function handleWheel(event: WheelEvent) {
-      if (!event.ctrlKey && !event.metaKey) {
-        return
-      }
-
-      event.preventDefault()
-      canvasStageRef.current?.zoomFromWheel({
-        clientX: event.clientX,
-        clientY: event.clientY,
-        deltaY: event.deltaY,
-      })
-    }
-
-    layoutRoot.addEventListener("wheel", handleWheel, { passive: false })
-
-    return () => {
-      layoutRoot.removeEventListener("wheel", handleWheel)
-    }
-  }, [])
 
   useEffect(() => {
     if (!conversationId) return
@@ -699,24 +683,23 @@ function syncCanvasItemsWithAssets(
       const existing = currentByAssetId.get(asset.id)
 
       if (existing) {
+        const displaySize = resolveCanvasDisplaySize(asset.width, asset.height)
         nextItems.push({
           ...existing,
-          width: asset.width,
-          height: asset.height,
+          width: displaySize.width,
+          height: displaySize.height,
         })
         continue
       }
 
-      const itemPosition = getNextCanvasItemPosition(index, {
-        width: asset.width,
-        height: asset.height,
-      })
+      const displaySize = resolveCanvasDisplaySize(asset.width, asset.height)
+      const itemPosition = getNextCanvasItemPosition(index, displaySize)
 
       nextItems.push({
         id: crypto.randomUUID(),
         assetId: asset.id,
-        width: asset.width,
-        height: asset.height,
+        width: displaySize.width,
+        height: displaySize.height,
         ...itemPosition,
       })
     }
@@ -751,10 +734,11 @@ function getNextCanvasItemPosition(
 ) {
   const gap = 180
   const columns = 3
+  const baseCellSize = 520
   const column = itemCount % columns
   const row = Math.floor(itemCount / columns)
-  const cellWidth = 1024 + gap
-  const cellHeight = 1024 + gap
+  const cellWidth = baseCellSize + gap
+  const cellHeight = baseCellSize + gap
   const x = column * cellWidth - ((columns - 1) * cellWidth) / 2
   const y = row * cellHeight
 

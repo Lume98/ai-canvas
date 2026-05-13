@@ -190,7 +190,6 @@ const InfiniteCanvas = forwardRef<CanvasSurfaceHandle, InfiniteCanvasProps>(
     const {
       handlePanPointerDown,
       handlePanPointerMove,
-      handleWheel,
       isPanning,
       isSpacePressed,
       setViewport,
@@ -303,7 +302,6 @@ const InfiniteCanvas = forwardRef<CanvasSurfaceHandle, InfiniteCanvasProps>(
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={stopDragging}
-        onWheel={handleWheel}
         showBackground={false}
         style={getCanvasSurfaceStyle(viewport)}
       >
@@ -635,18 +633,31 @@ function useCanvasNavigation(
     }
   }, [])
 
-  function handleWheel(event: React.WheelEvent<HTMLDivElement>) {
-    if (event.ctrlKey || event.metaKey) {
-      return
+  useEffect(() => {
+    const container = containerRef.current
+
+    if (!container) return
+
+    function handleWheel(event: WheelEvent) {
+      if (!event.ctrlKey && !event.metaKey) {
+        return
+      }
+
+      event.preventDefault()
+      event.stopPropagation()
+      zoomFromWheel({
+        clientX: event.clientX,
+        clientY: event.clientY,
+        deltaY: event.deltaY,
+      })
     }
 
-    event.preventDefault()
-    zoomFromWheel({
-      clientX: event.clientX,
-      clientY: event.clientY,
-      deltaY: event.deltaY,
-    })
-  }
+    container.addEventListener("wheel", handleWheel, { passive: false })
+
+    return () => {
+      container.removeEventListener("wheel", handleWheel)
+    }
+  }, [containerRef, zoomFromWheel])
 
   function handlePanPointerDown(event: React.PointerEvent<HTMLDivElement>) {
     if (event.button !== 0 || !isSpacePressed) return
@@ -690,7 +701,6 @@ function useCanvasNavigation(
   return {
     handlePanPointerDown,
     handlePanPointerMove,
-    handleWheel,
     isPanning,
     isSpacePressed,
     setViewport,
@@ -717,7 +727,6 @@ const EmptyCanvas = forwardRef<
   const {
     handlePanPointerDown,
     handlePanPointerMove,
-    handleWheel,
     isPanning,
     isSpacePressed,
     stopPan,
@@ -747,7 +756,6 @@ const EmptyCanvas = forwardRef<
       onPointerDown={handlePanPointerDown}
       onPointerMove={handlePanPointerMove}
       onPointerUp={stopPan}
-      onWheel={handleWheel}
       showBackground={false}
       style={getCanvasSurfaceStyle(viewport)}
     >
@@ -955,10 +963,11 @@ function getNextGridPosition(
 ) {
   const gap = 180
   const columns = 3
+  const baseCellSize = 520
   const column = itemCount % columns
   const row = Math.floor(itemCount / columns)
-  const cellWidth = 1024 + gap
-  const cellHeight = 1024 + gap
+  const cellWidth = baseCellSize + gap
+  const cellHeight = baseCellSize + gap
   const x = column * cellWidth - ((columns - 1) * cellWidth) / 2
   const y = row * cellHeight
 

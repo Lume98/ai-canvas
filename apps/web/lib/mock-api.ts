@@ -156,6 +156,16 @@ export async function createConversation(request: Request) {
   return NextResponse.json({ conversation }, { status: 201 })
 }
 
+export function listConversations() {
+  hydrateSettledTasks()
+
+  const conversations = Array.from(state.conversations.values())
+    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
+    .map(cloneConversation)
+
+  return NextResponse.json({ conversations })
+}
+
 export function readConversation(conversationId: string) {
   hydrateSettledTasks()
 

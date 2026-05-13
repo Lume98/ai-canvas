@@ -122,6 +122,7 @@ export const models = [
 
 export const sizes = ["1024x1024", "1536x1024", "1024x1536", "auto"]
 export const qualities = ["auto", "high", "medium", "low"]
+const DEFAULT_CANVAS_MAX_DISPLAY_EDGE = 520
 
 export const promptSeeds = [
   "一张极简产品海报，磨砂玻璃香水瓶放在石材台面上，柔和晨光，商业摄影",
@@ -147,6 +148,22 @@ export function resolveGeneratedImageAspectRatio(size?: string) {
   return `${dimensions.width} / ${dimensions.height}`
 }
 
+export function resolveCanvasDisplaySize(
+  width: number,
+  height: number,
+  maxEdge = DEFAULT_CANVAS_MAX_DISPLAY_EDGE,
+) {
+  const safeWidth = Math.max(1, width)
+  const safeHeight = Math.max(1, height)
+  const longestEdge = Math.max(safeWidth, safeHeight)
+  const scale = Math.min(1, maxEdge / longestEdge)
+
+  return {
+    width: Math.max(120, Math.round(safeWidth * scale)),
+    height: Math.max(120, Math.round(safeHeight * scale)),
+  }
+}
+
 export function buildPendingImagePlaceholders(
   messages: ConversationMessage[],
 ): PendingImagePlaceholder[] {
@@ -166,7 +183,8 @@ export function buildPendingImagePlaceholdersForMessage(
 
   const count = Math.max(message.task.outputCount ?? 1, 1)
   const sizeLabel = message.task.size || "auto"
-  const size = resolveGeneratedImageSize(message.task.size)
+  const generatedSize = resolveGeneratedImageSize(message.task.size)
+  const size = resolveCanvasDisplaySize(generatedSize.width, generatedSize.height)
   const ratio = resolveGeneratedImageAspectRatio(message.task.size)
   const prompt = message.task.prompt ?? message.text
   const status = message.status === "running" ? "running" : "pending"
