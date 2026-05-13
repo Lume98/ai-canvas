@@ -26,14 +26,15 @@ export const defaultCanvasDisplayPreferences: CanvasDisplayPreferences = {
 const DISPLAY_PREFERENCES_STORAGE_KEY = "ai-canvas/display-preferences"
 
 export function parseCanvasDisplayPreferences(
-  value: StoredCanvasDisplayPreferences | null | undefined,
+  value: StoredCanvasDisplayPreferences | null | undefined
 ): CanvasDisplayPreferences {
   const presetValue = value?.imageDisplayPreset
 
   return {
     imageDisplayFields: parseImageDisplayFields(value?.imageDisplayFields),
     imageDisplayPreset:
-      typeof presetValue === "string" && isGeneratedImageDisplayPresetKey(presetValue)
+      typeof presetValue === "string" &&
+      isGeneratedImageDisplayPresetKey(presetValue)
         ? presetValue
         : defaultCanvasDisplayPreferences.imageDisplayPreset,
   }
@@ -59,7 +60,7 @@ export function readCanvasDisplayPreferences(): CanvasDisplayPreferences {
 }
 
 export function writeCanvasDisplayPreferences(
-  input: Partial<CanvasDisplayPreferences>,
+  input: Partial<CanvasDisplayPreferences>
 ): CanvasDisplayPreferences {
   const nextPreferences = parseCanvasDisplayPreferences({
     ...readCanvasDisplayPreferences(),
@@ -69,7 +70,7 @@ export function writeCanvasDisplayPreferences(
   if (typeof window !== "undefined") {
     window.localStorage.setItem(
       DISPLAY_PREFERENCES_STORAGE_KEY,
-      JSON.stringify(nextPreferences),
+      JSON.stringify(nextPreferences)
     )
   }
 
@@ -85,32 +86,32 @@ export function clearCanvasDisplayPreferences(): CanvasDisplayPreferences {
 }
 
 export function normalizeImageDisplayPreset(
-  value: string,
+  value: string
 ): GeneratedImageDisplayPresetKey {
   return getGeneratedImageDisplayPreset(value).variant
 }
 
 export function resolveCanvasDisplayFieldStates(
-  preferences: CanvasDisplayPreferences,
+  preferences: CanvasDisplayPreferences
 ): Record<GeneratedImageDisplayFieldKey, boolean> {
   const resolvedPreset = resolveGeneratedImageDisplayPreset(
     getGeneratedImageDisplayPreset(preferences.imageDisplayPreset),
-    preferences.imageDisplayFields,
+    preferences.imageDisplayFields
   )
-  const bottomOverlay = resolvedPreset.bottomOverlay
+  const infoPanel = resolvedPreset.infoPanel
 
   return {
-    dimensions: bottomOverlay?.showDimensions ?? false,
-    model: bottomOverlay?.showModel ?? false,
+    dimensions: infoPanel?.showDimensions ?? false,
+    model: infoPanel?.showModel ?? false,
     order: resolvedPreset.showOrderBadges,
-    prompt: bottomOverlay?.showPrompt ?? false,
-    quality: bottomOverlay?.showQuality ?? false,
-    size: bottomOverlay?.showSize ?? false,
+    prompt: infoPanel?.showPrompt ?? false,
+    quality: infoPanel?.showQuality ?? false,
+    size: infoPanel?.showSize ?? false,
   }
 }
 
 function parseImageDisplayFields(
-  value: Partial<Record<string, unknown>> | undefined,
+  value: Partial<Record<string, unknown>> | undefined
 ): GeneratedImageDisplayFieldOverrides {
   const fields: GeneratedImageDisplayFieldOverrides = {}
 

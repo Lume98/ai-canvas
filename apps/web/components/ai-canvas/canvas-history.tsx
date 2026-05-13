@@ -37,7 +37,7 @@ export function CanvasHistory({
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-1">
           {results.map((item) => (
             <button
-              className="group overflow-hidden rounded-md border border-[oklch(0.78_0.028_75)] bg-white text-left shadow-sm transition hover:border-[oklch(0.49_0.12_168)]"
+              className="group rounded-md text-left transition hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-[oklch(0.55_0.14_168/0.28)] focus-visible:outline-none"
               key={item.id}
               type="button"
               onClick={() => onSelectResult(item)}

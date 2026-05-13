@@ -166,7 +166,8 @@ function MessageCard({
                 <MessageSquareQuote className="size-4" />
               ) : message.status === "failed" ? (
                 <TriangleAlert className="size-4" />
-              ) : message.status === "pending" || message.status === "running" ? (
+              ) : message.status === "pending" ||
+                message.status === "running" ? (
                 <LoaderCircle className="size-4 animate-spin" />
               ) : (
                 <Sparkles className="size-4" />
@@ -300,14 +301,14 @@ function AssistantMessageBody({
         {images.map((image) => (
           <button
             key={image.id}
-            className="group overflow-hidden rounded-2xl border border-[oklch(0.82_0.018_245)] bg-[oklch(0.985_0.008_245)] shadow-sm transition hover:-translate-y-0.5 hover:border-[oklch(0.55_0.12_168)]"
+            className="group rounded-md text-left transition hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-[oklch(0.55_0.14_168/0.28)] focus-visible:outline-none"
             type="button"
             onClick={(event) => {
               event.stopPropagation()
               onAssetSelect(image.asset)
             }}
           >
-            <div className="relative aspect-[4/4] overflow-hidden">
+            <div className="relative aspect-square">
               <GeneratedImagePresetCard
                 fieldOverrides={imageDisplayFields}
                 image={image}

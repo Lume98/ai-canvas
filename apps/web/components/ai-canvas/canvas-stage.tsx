@@ -421,11 +421,11 @@ function CanvasImageItem({
   return (
     <div
       className={[
-        "absolute max-w-none overflow-hidden rounded-md border bg-white shadow-sm",
+        "absolute max-w-none rounded-md border bg-transparent",
         isDragging ? "cursor-grabbing" : "cursor-grab",
         isSelected
-          ? "border-[oklch(0.55_0.14_168)] ring-2 ring-[oklch(0.55_0.14_168/0.22)]"
-          : "border-[oklch(0.82_0.025_245)]",
+          ? "border-[oklch(0.55_0.14_168)] ring-2 ring-[oklch(0.55_0.14_168/0.24)]"
+          : "border-transparent",
       ].join(" ")}
       onPointerDown={(event) => onPointerDown(event, item)}
       style={{

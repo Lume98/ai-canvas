@@ -11,8 +11,8 @@ export type GeneratedImageDisplayFieldOverrides = Partial<
   Record<GeneratedImageDisplayFieldKey, boolean>
 >
 
-export type GeneratedImageOverlayPreset = {
-  promptLines?: 2 | 3
+export type GeneratedImageInfoPreset = {
+  promptLines?: 1 | 2 | 3
   showDimensions?: boolean
   showModel?: boolean
   showPrompt?: boolean
@@ -21,13 +21,13 @@ export type GeneratedImageOverlayPreset = {
 }
 
 export type GeneratedImageDisplayPreset = {
-  bottomOverlay?: GeneratedImageOverlayPreset
+  infoPanel?: GeneratedImageInfoPreset
   showOrderBadges?: boolean
   variant: GeneratedImageDisplayVariant
 }
 
-export type ResolvedGeneratedImageOverlayPreset = {
-  promptLines: 2 | 3
+export type ResolvedGeneratedImageInfoPreset = {
+  promptLines: 1 | 2 | 3
   showDimensions: boolean
   showModel: boolean
   showPrompt: boolean
@@ -36,12 +36,12 @@ export type ResolvedGeneratedImageOverlayPreset = {
 }
 
 export type ResolvedGeneratedImageDisplayPreset = {
-  bottomOverlay: ResolvedGeneratedImageOverlayPreset | null
+  infoPanel: ResolvedGeneratedImageInfoPreset | null
   showOrderBadges: boolean
   variant: GeneratedImageDisplayVariant
 }
 
-const defaultOverlayPreset: ResolvedGeneratedImageOverlayPreset = {
+const defaultInfoPreset: ResolvedGeneratedImageInfoPreset = {
   promptLines: 2,
   showDimensions: true,
   showModel: true,
@@ -52,7 +52,7 @@ const defaultOverlayPreset: ResolvedGeneratedImageOverlayPreset = {
 
 const generatedImageDisplayPresetRegistry = {
   timeline: {
-    bottomOverlay: {
+    infoPanel: {
       showModel: true,
       showQuality: false,
       showSize: false,
@@ -61,7 +61,8 @@ const generatedImageDisplayPresetRegistry = {
     variant: "timeline",
   },
   history: {
-    bottomOverlay: {
+    infoPanel: {
+      promptLines: 1,
       showModel: false,
       showQuality: true,
       showSize: true,
@@ -70,7 +71,7 @@ const generatedImageDisplayPresetRegistry = {
     variant: "history",
   },
   canvas: {
-    bottomOverlay: {
+    infoPanel: {
       promptLines: 3,
       showModel: true,
       showQuality: true,
@@ -90,7 +91,7 @@ export const generatedImageDisplayPresets: Record<
 > = generatedImageDisplayPresetRegistry
 
 export const generatedImageDisplayPresetKeys = Object.keys(
-  generatedImageDisplayPresetRegistry,
+  generatedImageDisplayPresetRegistry
 ) as GeneratedImageDisplayPresetKey[]
 
 export const generatedImageDisplayFieldKeys = [
@@ -103,56 +104,54 @@ export const generatedImageDisplayFieldKeys = [
 ] as const satisfies GeneratedImageDisplayFieldKey[]
 
 export function isGeneratedImageDisplayPresetKey(
-  value: string,
+  value: string
 ): value is GeneratedImageDisplayPresetKey {
   return value in generatedImageDisplayPresetRegistry
 }
 
 export function getGeneratedImageDisplayPreset(
   value: string,
-  fallback: GeneratedImageDisplayPresetKey = "timeline",
+  fallback: GeneratedImageDisplayPresetKey = "timeline"
 ): GeneratedImageDisplayPreset {
-  const presetKey = isGeneratedImageDisplayPresetKey(value)
-    ? value
-    : fallback
+  const presetKey = isGeneratedImageDisplayPresetKey(value) ? value : fallback
 
   return generatedImageDisplayPresets[presetKey]
 }
 
 export function resolveGeneratedImageDisplayPreset(
   preset: GeneratedImageDisplayPreset,
-  fieldOverrides: GeneratedImageDisplayFieldOverrides = {},
+  fieldOverrides: GeneratedImageDisplayFieldOverrides = {}
 ): ResolvedGeneratedImageDisplayPreset {
   return {
     variant: preset.variant,
     showOrderBadges: fieldOverrides.order ?? preset.showOrderBadges ?? false,
-    bottomOverlay: preset.bottomOverlay
-      ? resolveGeneratedImageOverlayPreset(preset.bottomOverlay, fieldOverrides)
+    infoPanel: preset.infoPanel
+      ? resolveGeneratedImageInfoPreset(preset.infoPanel, fieldOverrides)
       : null,
   }
 }
 
-export function resolveGeneratedImageOverlayPreset(
-  preset: GeneratedImageOverlayPreset,
-  fieldOverrides: GeneratedImageDisplayFieldOverrides = {},
-): ResolvedGeneratedImageOverlayPreset {
+export function resolveGeneratedImageInfoPreset(
+  preset: GeneratedImageInfoPreset,
+  fieldOverrides: GeneratedImageDisplayFieldOverrides = {}
+): ResolvedGeneratedImageInfoPreset {
   return {
-    promptLines: preset.promptLines ?? defaultOverlayPreset.promptLines,
+    promptLines: preset.promptLines ?? defaultInfoPreset.promptLines,
     showDimensions:
       fieldOverrides.dimensions ??
       preset.showDimensions ??
-      defaultOverlayPreset.showDimensions,
+      defaultInfoPreset.showDimensions,
     showModel:
-      fieldOverrides.model ?? preset.showModel ?? defaultOverlayPreset.showModel,
+      fieldOverrides.model ?? preset.showModel ?? defaultInfoPreset.showModel,
     showPrompt:
       fieldOverrides.prompt ??
       preset.showPrompt ??
-      defaultOverlayPreset.showPrompt,
+      defaultInfoPreset.showPrompt,
     showQuality:
       fieldOverrides.quality ??
       preset.showQuality ??
-      defaultOverlayPreset.showQuality,
+      defaultInfoPreset.showQuality,
     showSize:
-      fieldOverrides.size ?? preset.showSize ?? defaultOverlayPreset.showSize,
+      fieldOverrides.size ?? preset.showSize ?? defaultInfoPreset.showSize,
   }
 }
