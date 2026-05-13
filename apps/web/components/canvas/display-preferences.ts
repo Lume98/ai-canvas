@@ -23,7 +23,7 @@ export const defaultCanvasDisplayPreferences: CanvasDisplayPreferences = {
   imageDisplayPreset: "timeline",
 }
 
-const DISPLAY_PREFERENCES_STORAGE_KEY = "ai-canvas/display-preferences"
+const DISPLAY_PREFERENCES_STORAGE_KEY = "canvas/display-preferences"
 
 export function parseCanvasDisplayPreferences(
   value: StoredCanvasDisplayPreferences | null | undefined

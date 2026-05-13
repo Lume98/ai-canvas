@@ -1,26 +1,35 @@
 "use client"
 
-import { CSSProperties, FormEvent, useEffect, useMemo, useRef, useState } from "react"
+import {
+  CSSProperties,
+  Dispatch,
+  FormEvent,
+  SetStateAction,
+  useEffect,
+  useMemo,
+  useRef,
+} from "react"
+import { useImmerReducer } from "use-immer"
 
 import { cn } from "@workspace/ui/lib/utils"
 
 import {
   defaultAiProviderConfig,
   readAiProviderConfig,
-} from "@/components/ai-canvas/ai-config"
-import { CanvasStage, CanvasStageHandle } from "@/components/ai-canvas/canvas-stage"
+} from "@/components/canvas/ai-config"
+import { CanvasStage, CanvasStageHandle } from "@/components/canvas/canvas-stage"
 import {
   createConversation,
   createConversationDrawTask,
   listConversations,
   readConversationMessages,
   readDrawTask,
-} from "@/components/ai-canvas/conversation-api"
+} from "@/components/canvas/conversation-api"
 import {
   CanvasDisplayPreferences,
   defaultCanvasDisplayPreferences,
   readCanvasDisplayPreferences,
-} from "@/components/ai-canvas/display-preferences"
+} from "@/components/canvas/display-preferences"
 import {
   CanvasItem,
   ConversationMessage,
@@ -32,17 +41,17 @@ import {
   qualities,
   resolveCanvasDisplaySize,
   sizes,
-} from "@/components/ai-canvas/canvas-types"
-import { FloatingCapsuleNav } from "@/components/ai-canvas/floating-capsule-nav"
+} from "@/components/canvas/canvas-types"
+import { FloatingCapsuleNav } from "@/components/canvas/floating-capsule-nav"
 import {
   AI_CANVAS_NAV_FOOTPRINT_CSS_VARIABLE,
   DEFAULT_AI_CANVAS_NAV_FOOTPRINT_PX,
   aiCanvasLayoutRootClassName,
   aiCanvasPromptComposerDockClassName,
-} from "@/components/ai-canvas/layout-tokens"
-import { PromptComposer } from "@/components/ai-canvas/prompt-composer"
+} from "@/components/canvas/layout-tokens"
+import { PromptComposer } from "@/components/canvas/prompt-composer"
 
-const CURRENT_CONVERSATION_STORAGE_KEY = "ai-canvas/current-conversation-id"
+const CURRENT_CONVERSATION_STORAGE_KEY = "canvas/current-conversation-id"
 
 type AiCanvasLayoutStyle = CSSProperties & {
   "--ai-canvas-nav-footprint": string
@@ -52,28 +61,166 @@ type AiCanvasProps = {
   initialConversationId?: string | null
 }
 
-export function AiCanvas({ initialConversationId = null }: AiCanvasProps) {
-  const [providerConfig, setProviderConfig] = useState(defaultAiProviderConfig)
-  const [isConfigLoading, setIsConfigLoading] = useState(true)
-  const [isConversationLoading, setIsConversationLoading] = useState(true)
-  const [prompt, setPrompt] = useState(promptSeeds[0] ?? "")
-  const [model, setModel] = useState(models[0]?.value ?? "gpt-image-2")
-  const [size, setSize] = useState(sizes[0] ?? "1024x1024")
-  const [quality, setQuality] = useState(qualities[0] ?? "auto")
-  const [displayPreferences, setDisplayPreferences] =
-    useState<CanvasDisplayPreferences>(defaultCanvasDisplayPreferences)
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [error, setError] = useState("")
-  const [conversationId, setConversationId] = useState<string | null>(null)
-  const [messages, setMessages] = useState<ConversationMessage[]>([])
-  const [canvasItems, setCanvasItems] = useState<CanvasItem[]>([])
-  const [selectedItemId, setSelectedItemId] = useState<string | null>(null)
-  const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null)
-  const [focusRequest, setFocusRequest] = useState<{
+type AiCanvasState = {
+  providerConfig: typeof defaultAiProviderConfig
+  isConfigLoading: boolean
+  isConversationLoading: boolean
+  prompt: string
+  model: string
+  size: string
+  quality: string
+  displayPreferences: CanvasDisplayPreferences
+  isGenerating: boolean
+  error: string
+  conversationId: string | null
+  messages: ConversationMessage[]
+  canvasItems: CanvasItem[]
+  selectedItemId: string | null
+  selectedMessageId: string | null
+  focusRequest: {
     centerX: number
     centerY: number
     requestId: number
-  } | null>(null)
+  } | null
+}
+
+type AiCanvasAction = (draft: AiCanvasState) => void
+
+const initialAiCanvasState: AiCanvasState = {
+  providerConfig: defaultAiProviderConfig,
+  isConfigLoading: true,
+  isConversationLoading: true,
+  prompt: promptSeeds[0] ?? "",
+  model: models[0]?.value ?? "gpt-image-2",
+  size: sizes[0] ?? "1024x1024",
+  quality: qualities[0] ?? "auto",
+  displayPreferences: defaultCanvasDisplayPreferences,
+  isGenerating: false,
+  error: "",
+  conversationId: null,
+  messages: [],
+  canvasItems: [],
+  selectedItemId: null,
+  selectedMessageId: null,
+  focusRequest: null,
+}
+
+export function AiCanvas({ initialConversationId = null }: AiCanvasProps) {
+  const [state, dispatch] = useImmerReducer(
+    (draft: AiCanvasState, action: AiCanvasAction) => {
+      action(draft)
+    },
+    initialAiCanvasState,
+  )
+  const {
+    providerConfig,
+    isConfigLoading,
+    isConversationLoading,
+    prompt,
+    model,
+    size,
+    quality,
+    displayPreferences,
+    isGenerating,
+    error,
+    conversationId,
+    messages,
+    canvasItems,
+    selectedItemId,
+    selectedMessageId,
+    focusRequest,
+  } = state
+
+  const setProviderConfig = (next: SetStateAction<typeof defaultAiProviderConfig>) => {
+    dispatch((draft) => {
+      draft.providerConfig = applySetStateAction(draft.providerConfig, next)
+    })
+  }
+  const setIsConfigLoading = (next: SetStateAction<boolean>) => {
+    dispatch((draft) => {
+      draft.isConfigLoading = applySetStateAction(draft.isConfigLoading, next)
+    })
+  }
+  const setIsConversationLoading = (next: SetStateAction<boolean>) => {
+    dispatch((draft) => {
+      draft.isConversationLoading = applySetStateAction(
+        draft.isConversationLoading,
+        next,
+      )
+    })
+  }
+  const setPrompt = (next: SetStateAction<string>) => {
+    dispatch((draft) => {
+      draft.prompt = applySetStateAction(draft.prompt, next)
+    })
+  }
+  const setModel = (next: SetStateAction<string>) => {
+    dispatch((draft) => {
+      draft.model = applySetStateAction(draft.model, next)
+    })
+  }
+  const setSize = (next: SetStateAction<string>) => {
+    dispatch((draft) => {
+      draft.size = applySetStateAction(draft.size, next)
+    })
+  }
+  const setQuality = (next: SetStateAction<string>) => {
+    dispatch((draft) => {
+      draft.quality = applySetStateAction(draft.quality, next)
+    })
+  }
+  const setDisplayPreferences = (
+    next: SetStateAction<CanvasDisplayPreferences>,
+  ) => {
+    dispatch((draft) => {
+      draft.displayPreferences = applySetStateAction(
+        draft.displayPreferences,
+        next,
+      )
+    })
+  }
+  const setIsGenerating = (next: SetStateAction<boolean>) => {
+    dispatch((draft) => {
+      draft.isGenerating = applySetStateAction(draft.isGenerating, next)
+    })
+  }
+  const setError = (next: SetStateAction<string>) => {
+    dispatch((draft) => {
+      draft.error = applySetStateAction(draft.error, next)
+    })
+  }
+  const setConversationId = (next: SetStateAction<string | null>) => {
+    dispatch((draft) => {
+      draft.conversationId = applySetStateAction(draft.conversationId, next)
+    })
+  }
+  const setMessages = (next: SetStateAction<ConversationMessage[]>) => {
+    dispatch((draft) => {
+      draft.messages = applySetStateAction(draft.messages, next)
+    })
+  }
+  const setCanvasItems = (next: SetStateAction<CanvasItem[]>) => {
+    dispatch((draft) => {
+      draft.canvasItems = applySetStateAction(draft.canvasItems, next)
+    })
+  }
+  const setSelectedItemId = (next: SetStateAction<string | null>) => {
+    dispatch((draft) => {
+      draft.selectedItemId = applySetStateAction(draft.selectedItemId, next)
+    })
+  }
+  const setSelectedMessageId = (next: SetStateAction<string | null>) => {
+    dispatch((draft) => {
+      draft.selectedMessageId = applySetStateAction(draft.selectedMessageId, next)
+    })
+  }
+  const setFocusRequest = (
+    next: SetStateAction<AiCanvasState["focusRequest"]>,
+  ) => {
+    dispatch((draft) => {
+      draft.focusRequest = applySetStateAction(draft.focusRequest, next)
+    })
+  }
   const layoutRootRef = useRef<HTMLElement | null>(null)
   const canvasStageRef = useRef<CanvasStageHandle | null>(null)
   const pendingTaskIdsRef = useRef<Set<string>>(new Set())
@@ -673,7 +820,7 @@ function groupImagesByMessageId(images: GeneratedImageView[]) {
 
 function syncCanvasItemsWithAssets(
   assets: ImageAsset[],
-  setCanvasItems: React.Dispatch<React.SetStateAction<CanvasItem[]>>,
+  setCanvasItems: Dispatch<SetStateAction<CanvasItem[]>>,
 ) {
   setCanvasItems((current) => {
     const currentByAssetId = new Map(current.map((item) => [item.assetId, item]))
@@ -726,6 +873,12 @@ function syncCanvasItemsWithAssets(
 
     return current
   })
+}
+
+function applySetStateAction<T>(current: T, next: SetStateAction<T>): T {
+  return typeof next === "function"
+    ? (next as (value: T) => T)(current)
+    : next
 }
 
 function getNextCanvasItemPosition(

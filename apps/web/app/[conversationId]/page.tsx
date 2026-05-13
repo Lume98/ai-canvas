@@ -1,4 +1,4 @@
-import { AiCanvas } from "@/components/ai-canvas/ai-canvas"
+import { AiCanvas } from "@/components/canvas/ai-canvas"
 
 type ConversationPageProps = {
   params: Promise<{

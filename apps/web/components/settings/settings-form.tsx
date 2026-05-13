@@ -1,7 +1,8 @@
 "use client"
 
-import { FormEvent, useEffect, useState } from "react"
+import { FormEvent, SetStateAction, useEffect } from "react"
 import { RotateCcw, Save } from "lucide-react"
+import { useImmerReducer } from "use-immer"
 
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -20,7 +21,7 @@ import {
   defaultOpenAIBaseUrl,
   readAiProviderConfig,
   writeAiProviderConfig,
-} from "@/components/ai-canvas/ai-config"
+} from "@/components/canvas/ai-config"
 import {
   CanvasDisplayPreferences,
   clearCanvasDisplayPreferences,
@@ -28,11 +29,11 @@ import {
   readCanvasDisplayPreferences,
   resolveCanvasDisplayFieldStates,
   writeCanvasDisplayPreferences,
-} from "@/components/ai-canvas/display-preferences"
+} from "@/components/canvas/display-preferences"
 import {
   GeneratedImageDisplayFieldKey,
   generatedImageDisplayPresetKeys,
-} from "@/components/ai-canvas/generated-image-display-presets"
+} from "@/components/canvas/generated-image-display-presets"
 
 const inputClass =
   "w-full rounded-md border border-[oklch(0.74_0.035_75)] bg-white/80 px-3 py-2 text-sm shadow-sm outline-none transition placeholder:text-[oklch(0.56_0.025_245)] focus:border-[oklch(0.49_0.12_168)] focus:ring-3 focus:ring-[oklch(0.72_0.11_168_/_0.28)]"
@@ -42,21 +43,86 @@ type SettingsFormProps = {
   onDisplayPreferencesChange?: (preferences: CanvasDisplayPreferences) => void
 }
 
+type SettingsFormState = {
+  apiKey: string
+  baseUrl: string
+  imageDisplayPreset: CanvasDisplayPreferences["imageDisplayPreset"]
+  imageDisplayFields: CanvasDisplayPreferences["imageDisplayFields"]
+  isLoading: boolean
+  isSaving: boolean
+  status: string
+}
+
+type SettingsFormAction = (draft: SettingsFormState) => void
+
+const initialSettingsFormState: SettingsFormState = {
+  apiKey: defaultAiProviderConfig.apiKey,
+  baseUrl: defaultAiProviderConfig.baseUrl,
+  imageDisplayPreset: defaultCanvasDisplayPreferences.imageDisplayPreset,
+  imageDisplayFields: defaultCanvasDisplayPreferences.imageDisplayFields,
+  isLoading: true,
+  isSaving: false,
+  status: "",
+}
+
 export function SettingsForm({
   onConfigChange,
   onDisplayPreferencesChange,
 }: SettingsFormProps) {
-  const [apiKey, setApiKey] = useState(defaultAiProviderConfig.apiKey)
-  const [baseUrl, setBaseUrl] = useState(defaultAiProviderConfig.baseUrl)
-  const [imageDisplayPreset, setImageDisplayPreset] = useState(
-    defaultCanvasDisplayPreferences.imageDisplayPreset,
+  const [state, dispatch] = useImmerReducer(
+    (draft: SettingsFormState, action: SettingsFormAction) => {
+      action(draft)
+    },
+    initialSettingsFormState,
   )
-  const [imageDisplayFields, setImageDisplayFields] = useState(
-    defaultCanvasDisplayPreferences.imageDisplayFields,
-  )
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
-  const [status, setStatus] = useState("")
+  const {
+    apiKey,
+    baseUrl,
+    imageDisplayPreset,
+    imageDisplayFields,
+    isLoading,
+    isSaving,
+    status,
+  } = state
+  const setApiKey = (next: SetStateAction<string>) => {
+    dispatch((draft) => {
+      draft.apiKey = applySetStateAction(draft.apiKey, next)
+    })
+  }
+  const setBaseUrl = (next: SetStateAction<string>) => {
+    dispatch((draft) => {
+      draft.baseUrl = applySetStateAction(draft.baseUrl, next)
+    })
+  }
+  const setImageDisplayPreset = (
+    next: SetStateAction<CanvasDisplayPreferences["imageDisplayPreset"]>,
+  ) => {
+    dispatch((draft) => {
+      draft.imageDisplayPreset = applySetStateAction(draft.imageDisplayPreset, next)
+    })
+  }
+  const setImageDisplayFields = (
+    next: SetStateAction<CanvasDisplayPreferences["imageDisplayFields"]>,
+  ) => {
+    dispatch((draft) => {
+      draft.imageDisplayFields = applySetStateAction(draft.imageDisplayFields, next)
+    })
+  }
+  const setIsLoading = (next: SetStateAction<boolean>) => {
+    dispatch((draft) => {
+      draft.isLoading = applySetStateAction(draft.isLoading, next)
+    })
+  }
+  const setIsSaving = (next: SetStateAction<boolean>) => {
+    dispatch((draft) => {
+      draft.isSaving = applySetStateAction(draft.isSaving, next)
+    })
+  }
+  const setStatus = (next: SetStateAction<string>) => {
+    dispatch((draft) => {
+      draft.status = applySetStateAction(draft.status, next)
+    })
+  }
   const resolvedDisplayFields = resolveCanvasDisplayFieldStates({
     imageDisplayFields,
     imageDisplayPreset,
@@ -289,6 +355,12 @@ export function SettingsForm({
       </div>
     </form>
   )
+}
+
+function applySetStateAction<T>(current: T, next: SetStateAction<T>): T {
+  return typeof next === "function"
+    ? (next as (value: T) => T)(current)
+    : next
 }
 
 const displayPresetLabelMap: Record<
