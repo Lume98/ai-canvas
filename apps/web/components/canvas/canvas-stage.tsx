@@ -1086,7 +1086,7 @@ function getPendingPlaceholderPosition(
   itemCount: number,
   size: { width: number; height: number }
 ) {
-  return getNextGridPosition(itemCount, size)
+  return getNextTimelinePlaceholderPosition(itemCount, size)
 }
 
 function describePendingPlaceholderSummary(
@@ -1112,19 +1112,17 @@ function describePendingPlaceholderSummary(
   return `已预留 ${pendingPlaceholders.length} 个结果位，等待执行`
 }
 
-function getNextGridPosition(
+function getNextTimelinePlaceholderPosition(
   itemCount: number,
   size: { width: number; height: number }
 ) {
-  const gap = 180
+  const columnSpacing = 760
+  const rowSpacing = 720
   const columns = 3
-  const baseCellSize = 520
   const column = itemCount % columns
   const row = Math.floor(itemCount / columns)
-  const cellWidth = baseCellSize + gap
-  const cellHeight = baseCellSize + gap
-  const x = column * cellWidth - ((columns - 1) * cellWidth) / 2
-  const y = row * cellHeight
+  const x = column * columnSpacing - ((columns - 1) * columnSpacing) / 2
+  const y = row * rowSpacing
 
   return {
     x: x - size.width / 2,

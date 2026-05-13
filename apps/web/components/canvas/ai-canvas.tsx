@@ -46,6 +46,9 @@ export function AiCanvas({ initialConversationId = null }: AiCanvasProps) {
     isCanvasGenerating,
     pendingMessages,
     selectedItemId,
+    generationSourceAssetId,
+    branchMode,
+    selectedSourceImage,
     setProviderConfig,
     setDisplayPreferences,
     setPrompt,
@@ -54,11 +57,15 @@ export function AiCanvas({ initialConversationId = null }: AiCanvasProps) {
     setSize,
     setCanvasItems,
     setSelectedItemId,
+    setBranchMode,
     handleSelectResult,
     handleSelectAsset,
     handleSelectMessage,
     handleRetryTask,
     handleUseTaskAsDraft,
+    handleUseAssetAsGenerationSource,
+    handleUseSelectedAssetAsGenerationSource,
+    handleClearGenerationSource,
     handleSubmit,
   } = useAiCanvasController(initialConversationId)
 
@@ -93,6 +100,7 @@ export function AiCanvas({ initialConversationId = null }: AiCanvasProps) {
         onPromptSelect={setPrompt}
         onResultSelect={handleSelectResult}
         onRetryTask={handleRetryTask}
+        onUseAssetAsGenerationSource={handleUseAssetAsGenerationSource}
         onUseTaskAsDraft={handleUseTaskAsDraft}
       />
       <section className="relative flex h-full min-h-0 flex-col overflow-hidden">
@@ -112,17 +120,29 @@ export function AiCanvas({ initialConversationId = null }: AiCanvasProps) {
 
         <div className={aiCanvasPromptComposerDockClassName}>
           <PromptComposer
+            branchMode={branchMode}
             canGenerate={canGenerate}
             error={error}
+            generationSourceLabel={
+              selectedSourceImage
+                ? `基于已选图片继续生成 · 第 ${selectedSourceImage.generationOrder} 轮`
+                : null
+            }
             isGenerating={isGenerating || isConversationLoading}
             model={model}
             prompt={prompt}
             quality={quality}
+            selectedItemId={selectedItemId}
+            sourceImage={selectedSourceImage}
             size={size}
+            hasGenerationSource={Boolean(generationSourceAssetId)}
+            onClearGenerationSource={handleClearGenerationSource}
+            onBranchModeChange={setBranchMode}
             onModelChange={setModel}
             onPromptChange={setPrompt}
             onQualityChange={setQuality}
             onSizeChange={setSize}
+            onUseSelectedAsGenerationSource={handleUseSelectedAssetAsGenerationSource}
             onSubmit={handleSubmit}
           />
         </div>

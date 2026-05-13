@@ -68,6 +68,7 @@ class DrawTaskService:
             size=task_input.size,
             quality=task_input.quality,
             output_count=task_input.output_count,
+            branch_mode=task_input.branch_mode,
             parent_asset_id=task_input.parent_asset_id,
         )
 
@@ -106,6 +107,8 @@ class DrawTaskService:
                 size=task.size,
                 quality=task.quality,
                 output_count=task.output_count,
+                branch_mode=task.branch_mode,
+                parent_asset_id=task.parent_asset_id,
             )
         )
 

@@ -44,7 +44,7 @@ def create_worker_services(
     image_store: GeneratedImageStore,
 ) -> WorkerServices:
     provider_config = ProviderConfigService(store)
-    image_generation = ImageGenerationService(provider_config, image_store)
+    image_generation = ImageGenerationService(provider_config, image_store, store)
     draw_tasks = DrawTaskService(store, image_generation)
 
     return WorkerServices(

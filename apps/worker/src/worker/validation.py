@@ -1,10 +1,14 @@
 from dataclasses import dataclass
 from typing import Any
 
+from .task import BranchMode
+
 
 ALLOWED_MODELS = {"gpt-image-2", "gpt-image-1.5", "gpt-image-1"}
 ALLOWED_SIZES = {"1024x1024", "1536x1024", "1024x1536", "auto"}
 ALLOWED_QUALITIES = {"auto", "high", "medium", "low"}
+ALLOWED_BRANCH_MODES = {mode.value for mode in BranchMode}
+BRANCH_SOURCE_COMPATIBLE_MODELS = {"gpt-image-1.5", "gpt-image-1"}
 DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1"
 
 
@@ -16,6 +20,7 @@ class DrawTaskInput:
     quality: str
     output_count: int = 1
     conversation_id: str | None = None
+    branch_mode: BranchMode | None = None
     parent_asset_id: str | None = None
 
 
@@ -76,6 +81,16 @@ def validate_draw_task_input(payload: Any) -> tuple[DrawTaskInput | None, str | 
     return DrawTaskInput(prompt=prompt, model=model, size=size, quality=quality), None
 
 
+def validate_branch_mode(value: Any) -> tuple[BranchMode | None, str | None]:
+    if value is None:
+        return None, None
+
+    if not isinstance(value, str) or value not in ALLOWED_BRANCH_MODES:
+        return None, "不支持的分支模式。"
+
+    return BranchMode(value), None
+
+
 def validate_conversation_draw_task_input(
     payload: Any,
 ) -> tuple[DrawTaskInput | None, str | None]:
@@ -94,12 +109,22 @@ def validate_conversation_draw_task_input(
     if output_count_error or output_count is None:
         return None, output_count_error
 
+    branch_mode, branch_mode_error = validate_branch_mode(payload.get("branchMode"))
+
+    if branch_mode_error:
+        return None, branch_mode_error
+
     parent_asset_id = payload.get("parentAssetId")
     normalized_parent_asset_id = (
         parent_asset_id.strip()
         if isinstance(parent_asset_id, str) and parent_asset_id.strip()
         else None
     )
+
+    if normalized_parent_asset_id is None:
+        branch_mode = None
+    elif task_input.model not in BRANCH_SOURCE_COMPATIBLE_MODELS:
+        return None, "当前模型不支持基于来源图继续生成，请切换到 GPT Image 1.5 或 GPT Image 1。"
 
     return (
         DrawTaskInput(
@@ -109,6 +134,7 @@ def validate_conversation_draw_task_input(
             quality=task_input.quality,
             output_count=output_count,
             conversation_id=conversation_id,
+            branch_mode=branch_mode,
             parent_asset_id=normalized_parent_asset_id,
         ),
         None,

@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
-from .task import DrawTask, DrawTaskStatus, GeneratedImage
+from .task import BranchMode, DrawTask, DrawTaskStatus, GeneratedImage
 from .validation import DEFAULT_OPENAI_BASE_URL, ProviderConfigInput
 
 
@@ -62,6 +62,7 @@ class SQLiteDrawTaskStore:
                   size TEXT NOT NULL,
                   quality TEXT NOT NULL,
                   output_count INTEGER NOT NULL DEFAULT 1,
+                  branch_mode TEXT,
                   parent_asset_id TEXT,
                   status TEXT NOT NULL,
                   progress INTEGER NOT NULL DEFAULT 0,
@@ -223,10 +224,11 @@ class SQLiteDrawTaskStore:
                   size,
                   quality,
                   output_count,
+                  branch_mode,
                   parent_asset_id,
                   status
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     task.id,
@@ -238,6 +240,7 @@ class SQLiteDrawTaskStore:
                     task.size,
                     task.quality,
                     task.output_count,
+                    task.branch_mode.value if task.branch_mode else None,
                     task.parent_asset_id,
                     DrawTaskStatus.QUEUED.value,
                 ),
@@ -317,6 +320,19 @@ class SQLiteDrawTaskStore:
 
         return task
 
+    def get_asset(self, asset_id: str) -> dict[str, Any] | None:
+        with self.connect() as connection:
+            row = connection.execute(
+                """
+                SELECT *
+                FROM image_assets
+                WHERE id = ?
+                """,
+                (asset_id,),
+            ).fetchone()
+
+        return self._serialize_image_asset_row(row) if row else None
+
     def claim_next_task(self) -> DrawTask | None:
         with self.connect() as connection:
             row = connection.execute(
@@ -344,6 +360,7 @@ class SQLiteDrawTaskStore:
                   size,
                   quality,
                   output_count,
+                  branch_mode,
                   parent_asset_id,
                   attempts
                 """,
@@ -373,6 +390,7 @@ class SQLiteDrawTaskStore:
             size=row["size"],
             quality=row["quality"],
             output_count=row["output_count"] or 1,
+            branch_mode=BranchMode(row["branch_mode"]) if row["branch_mode"] else None,
             parent_asset_id=row["parent_asset_id"],
             attempts=row["attempts"],
         )
@@ -704,6 +722,7 @@ class SQLiteDrawTaskStore:
             "size": row["size"],
             "quality": row["quality"],
             "outputCount": row["output_count"],
+            "branchMode": row["branch_mode"],
             "parentAssetId": row["parent_asset_id"],
             "status": row["status"],
             "progress": row["progress"],
@@ -742,6 +761,7 @@ class SQLiteDrawTaskStore:
             "output_count": (
                 "ALTER TABLE draw_tasks ADD COLUMN output_count INTEGER NOT NULL DEFAULT 1"
             ),
+            "branch_mode": "ALTER TABLE draw_tasks ADD COLUMN branch_mode TEXT",
             "parent_asset_id": "ALTER TABLE draw_tasks ADD COLUMN parent_asset_id TEXT",
         }
 

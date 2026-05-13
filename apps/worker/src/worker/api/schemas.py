@@ -59,6 +59,7 @@ class DrawTaskRequest(ImageGenerationRequest):
 
     conversation_id: str = Field(min_length=1, alias="conversationId")
     output_count: int = Field(default=1, alias="outputCount")
+    branch_mode: str | None = Field(default=None, alias="branchMode")
     parent_asset_id: str | None = Field(default=None, alias="parentAssetId")
 
     def to_domain_input(self) -> tuple[DrawTaskInput | None, str | None]:

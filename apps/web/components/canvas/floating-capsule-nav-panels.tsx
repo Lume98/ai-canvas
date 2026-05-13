@@ -45,6 +45,7 @@ export type PanelRenderContext = {
   onPromptSelect: (prompt: string) => void
   onResultSelect: (result: HistoryResult) => void
   onRetryTask: (task: DrawTaskRecord) => void
+  onUseAssetAsGenerationSource: (asset: ImageAsset) => void
   onUseTaskAsDraft: (task: DrawTaskRecord) => void
   profileStatus: string
   prompts: string[]
@@ -80,6 +81,7 @@ type FloatingCapsulePanelsOptions = {
   onPromptSelect: (prompt: string) => void
   onResultSelect: (result: HistoryResult) => void
   onRetryTask: (task: DrawTaskRecord) => void
+  onUseAssetAsGenerationSource: (asset: ImageAsset) => void
   onUseTaskAsDraft: (task: DrawTaskRecord) => void
   profileStatus: string
   prompts: string[]
@@ -161,6 +163,7 @@ const panelSchema: Record<FloatingPanelKey, FloatingPanelSchema> = {
           onAssetSelect={context.onAssetSelect}
           onMessageSelect={context.onMessageSelect}
           onRetryTask={context.onRetryTask}
+          onUseAssetAsGenerationSource={context.onUseAssetAsGenerationSource}
           onUseTaskAsDraft={context.onUseTaskAsDraft}
         />
       </div>
@@ -248,6 +251,7 @@ export function useFloatingCapsulePanels(
       onPromptSelect: options.onPromptSelect,
       onResultSelect: options.onResultSelect,
       onRetryTask: options.onRetryTask,
+      onUseAssetAsGenerationSource: options.onUseAssetAsGenerationSource,
       onUseTaskAsDraft: options.onUseTaskAsDraft,
       profileStatus: options.profileStatus,
       prompts: options.prompts,
@@ -281,6 +285,7 @@ export function useFloatingCapsulePanels(
     options.onPromptSelect,
     options.onResultSelect,
     options.onRetryTask,
+    options.onUseAssetAsGenerationSource,
     options.onUseTaskAsDraft,
     options.profileStatus,
     options.prompts,

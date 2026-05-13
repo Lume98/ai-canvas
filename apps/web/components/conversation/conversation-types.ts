@@ -1,4 +1,5 @@
 import type { ImageAsset } from "@/components/domain/asset-types"
+import type { BranchMode } from "@/components/domain/branch-mode"
 
 export type Conversation = {
   id: string
@@ -17,6 +18,7 @@ export type DrawTaskRecord = {
   size: string
   quality: string
   outputCount: number
+  branchMode: BranchMode | null
   parentAssetId: string | null
   status: "queued" | "running" | "succeeded" | "failed" | "canceled"
   progress: number

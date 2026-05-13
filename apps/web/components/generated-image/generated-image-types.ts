@@ -5,6 +5,7 @@ export type GeneratedImageView = {
   asset: ImageAsset
   messageId: string
   taskId: string
+  parentAssetId: string | null
   url: string
   width: number
   height: number
@@ -55,6 +56,8 @@ export const models = [
   { value: "gpt-image-1.5", label: "GPT Image 1.5" },
   { value: "gpt-image-1", label: "GPT Image 1" },
 ]
+
+export const branchSourceCompatibleModels = ["gpt-image-1.5", "gpt-image-1"] as const
 
 export const sizes = ["1024x1024", "1536x1024", "1024x1536", "auto"]
 export const qualities = ["auto", "high", "medium", "low"]

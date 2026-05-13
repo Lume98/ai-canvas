@@ -10,6 +10,12 @@ class DrawTaskStatus(StrEnum):
     CANCELED = "canceled"
 
 
+class BranchMode(StrEnum):
+    EVOLVE = "evolve"
+    PRESERVE = "preserve"
+    TRANSFORM = "transform"
+
+
 @dataclass(frozen=True)
 class DrawTask:
     id: str
@@ -21,6 +27,7 @@ class DrawTask:
     size: str = "1024x1024"
     quality: str = "auto"
     output_count: int = 1
+    branch_mode: BranchMode | None = None
     parent_asset_id: str | None = None
     attempts: int = 0
 

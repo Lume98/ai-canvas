@@ -44,6 +44,7 @@ type FloatingCapsuleNavProps = {
   onPromptSelect: (prompt: string) => void
   onResultSelect: (result: HistoryResult) => void
   onRetryTask: (task: DrawTaskRecord) => void
+  onUseAssetAsGenerationSource: (asset: ImageAsset) => void
   onUseTaskAsDraft: (task: DrawTaskRecord) => void
   layoutRootRef: RefObject<HTMLElement | null>
   userName?: string
@@ -67,6 +68,7 @@ export function FloatingCapsuleNav({
   onPromptSelect,
   onResultSelect,
   onRetryTask,
+  onUseAssetAsGenerationSource,
   onUseTaskAsDraft,
   userName = "Canvas User",
 }: FloatingCapsuleNavProps) {
@@ -101,6 +103,10 @@ export function FloatingCapsuleNav({
       },
       onRetryTask: (task) => {
         onRetryTask(task)
+        setActivePanel(null)
+      },
+      onUseAssetAsGenerationSource: (asset) => {
+        onUseAssetAsGenerationSource(asset)
         setActivePanel(null)
       },
       onUseTaskAsDraft: (task) => {

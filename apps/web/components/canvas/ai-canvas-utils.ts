@@ -37,6 +37,7 @@ export function buildGeneratedImageViews(
         asset,
         messageId: message.id,
         taskId: asset.taskId,
+        parentAssetId: message.task.parentAssetId,
         url: asset.url,
         width: asset.width,
         height: asset.height,
@@ -91,37 +92,27 @@ export function buildCanvasConnectionSegments(
 ): CanvasConnectionSegment[] {
   if (images.length < 2 || canvasItems.length < 2) return []
 
+  const imagesByAssetId = new Map(images.map((image) => [image.asset.id, image]))
   const itemsByAssetId = new Map(canvasItems.map((item) => [item.assetId, item]))
-  const orderedAnchors = [...images]
-    .sort(compareGeneratedImagesBySequence)
-    .flatMap((image) => {
-      const item = itemsByAssetId.get(image.asset.id)
-      if (!item) return []
-
-      return [
-        {
-          assetId: image.asset.id,
-          center: getCanvasItemCenter(item),
-          item,
-        },
-      ]
-    })
-
   const segments: CanvasConnectionSegment[] = []
 
-  for (let index = 1; index < orderedAnchors.length; index += 1) {
-    const previous = orderedAnchors[index - 1]
-    const current = orderedAnchors[index]
+  for (const image of [...images].sort(compareGeneratedImagesBySequence)) {
+    if (!image.parentAssetId) continue
 
-    if (!previous || !current) continue
+    const parentImage = imagesByAssetId.get(image.parentAssetId)
+    if (!parentImage) continue
+
+    const parentItem = itemsByAssetId.get(parentImage.asset.id)
+    const currentItem = itemsByAssetId.get(image.asset.id)
+    if (!parentItem || !currentItem) continue
 
     segments.push({
-      id: `${previous.assetId}->${current.assetId}`,
-      order: index,
-      fromItemId: previous.item.id,
-      toItemId: current.item.id,
-      from: getCanvasItemAnchor(previous.item, current.center),
-      to: getCanvasItemAnchor(current.item, previous.center),
+      id: `${parentImage.asset.id}->${image.asset.id}`,
+      order: image.generationOrder * 100 + image.imageOrder,
+      fromItemId: parentItem.id,
+      toItemId: currentItem.id,
+      from: getCanvasItemAnchor(parentItem, getCanvasItemCenter(currentItem)),
+      to: getCanvasItemAnchor(currentItem, getCanvasItemCenter(parentItem)),
     })
   }
 
@@ -129,16 +120,17 @@ export function buildCanvasConnectionSegments(
 }
 
 export function syncCanvasItemsWithAssets(
-  assets: ImageAsset[],
+  images: GeneratedImageView[],
   setCanvasItems: Dispatch<SetStateAction<CanvasItem[]>>,
 ) {
   setCanvasItems((current) => {
     const currentByAssetId = new Map(current.map((item) => [item.assetId, item]))
+    const layoutPlan = buildCanvasTimelineLayout(images)
     const nextItems: CanvasItem[] = []
 
-    for (const [index, asset] of assets.entries()) {
-      const existing = currentByAssetId.get(asset.id)
-      const displaySize = resolveGeneratedImageDisplaySize(asset.width, asset.height)
+    for (const image of images) {
+      const existing = currentByAssetId.get(image.asset.id)
+      const displaySize = resolveGeneratedImageDisplaySize(image.asset.width, image.asset.height)
 
       if (existing) {
         nextItems.push({
@@ -151,10 +143,10 @@ export function syncCanvasItemsWithAssets(
 
       nextItems.push({
         id: crypto.randomUUID(),
-        assetId: asset.id,
+        assetId: image.asset.id,
         width: displaySize.width,
         height: displaySize.height,
-        ...getNextCanvasItemPosition(index, displaySize),
+        ...resolveCanvasTimelinePosition(image.asset.id, displaySize, layoutPlan),
       })
     }
 
@@ -177,26 +169,6 @@ export function syncCanvasItemsWithAssets(
 
     return current
   })
-}
-
-function getNextCanvasItemPosition(
-  itemCount: number,
-  size: { width: number; height: number },
-) {
-  const gap = 180
-  const columns = 3
-  const baseCellSize = 520
-  const column = itemCount % columns
-  const row = Math.floor(itemCount / columns)
-  const cellWidth = baseCellSize + gap
-  const cellHeight = baseCellSize + gap
-  const x = column * cellWidth - ((columns - 1) * cellWidth) / 2
-  const y = row * cellHeight
-
-  return {
-    x: x - size.width / 2,
-    y: y - size.height / 2,
-  }
 }
 
 export function applySetStateAction<T>(current: T, next: SetStateAction<T>): T {
@@ -277,6 +249,120 @@ function compareGeneratedImagesBySequence(left: GeneratedImageView, right: Gener
     left.imageOrder - right.imageOrder ||
     left.asset.createdAt.localeCompare(right.asset.createdAt)
   )
+}
+
+type CanvasTimelineLayout = {
+  positionByAssetId: Map<
+    string,
+    {
+      x: number
+      y: number
+    }
+  >
+}
+
+function buildCanvasTimelineLayout(images: GeneratedImageView[]): CanvasTimelineLayout {
+  const orderedImages = [...images].sort(compareGeneratedImagesBySequence)
+  const imageByAssetId = new Map(orderedImages.map((image) => [image.asset.id, image]))
+  const childAssetIdsByParent = new Map<string, string[]>()
+  const rootAssetIds: string[] = []
+
+  for (const image of orderedImages) {
+    const parentAssetId = image.parentAssetId
+
+    if (parentAssetId && imageByAssetId.has(parentAssetId)) {
+      const children = childAssetIdsByParent.get(parentAssetId) ?? []
+      children.push(image.asset.id)
+      childAssetIdsByParent.set(parentAssetId, children)
+      continue
+    }
+
+    rootAssetIds.push(image.asset.id)
+  }
+
+  const rootSpacingX = 760
+  const rowSpacingY = 720
+  const siblingSpacingX = 640
+  const positionByAssetId = new Map<string, { x: number; y: number }>()
+  const subtreeWidthByAssetId = new Map<string, number>()
+
+  function measureSubtree(assetId: string): number {
+    const cached = subtreeWidthByAssetId.get(assetId)
+    if (cached) return cached
+
+    const children = childAssetIdsByParent.get(assetId) ?? []
+    const width = children.length
+      ? Math.max(
+          children.reduce((sum, childAssetId, index) => {
+            const childWidth = measureSubtree(childAssetId)
+            return sum + childWidth + (index > 0 ? siblingSpacingX : 0)
+          }, 0),
+          rootSpacingX
+        )
+      : rootSpacingX
+
+    subtreeWidthByAssetId.set(assetId, width)
+    return width
+  }
+
+  for (const rootAssetId of rootAssetIds) {
+    measureSubtree(rootAssetId)
+  }
+
+  const totalWidth =
+    rootAssetIds.reduce((sum, rootAssetId, index) => {
+      const rootWidth = subtreeWidthByAssetId.get(rootAssetId) ?? rootSpacingX
+      return sum + rootWidth + (index > 0 ? siblingSpacingX : 0)
+    }, 0) || rootSpacingX
+
+  let cursorX = -totalWidth / 2
+
+  function placeSubtree(assetId: string, centerX: number, row: number) {
+    positionByAssetId.set(assetId, {
+      x: centerX,
+      y: row * rowSpacingY,
+    })
+
+    const children = childAssetIdsByParent.get(assetId) ?? []
+    if (children.length === 0) return
+
+    const totalChildrenWidth = children.reduce((sum, childAssetId, index) => {
+      const childWidth = subtreeWidthByAssetId.get(childAssetId) ?? rootSpacingX
+      return sum + childWidth + (index > 0 ? siblingSpacingX : 0)
+    }, 0)
+    let childCursorX = centerX - totalChildrenWidth / 2
+
+    for (const childAssetId of children) {
+      const childWidth = subtreeWidthByAssetId.get(childAssetId) ?? rootSpacingX
+      const childCenterX = childCursorX + childWidth / 2
+      placeSubtree(childAssetId, childCenterX, row + 1)
+      childCursorX += childWidth + siblingSpacingX
+    }
+  }
+
+  for (const rootAssetId of rootAssetIds) {
+    const rootWidth = subtreeWidthByAssetId.get(rootAssetId) ?? rootSpacingX
+    const centerX = cursorX + rootWidth / 2
+    placeSubtree(rootAssetId, centerX, 0)
+    cursorX += rootWidth + siblingSpacingX
+  }
+
+  return {
+    positionByAssetId,
+  }
+}
+
+function resolveCanvasTimelinePosition(
+  assetId: string,
+  size: { width: number; height: number },
+  layout: CanvasTimelineLayout,
+) {
+  const position = layout.positionByAssetId.get(assetId) ?? { x: 0, y: 0 }
+
+  return {
+    x: position.x - size.width / 2,
+    y: position.y - size.height / 2,
+  }
 }
 
 function getCanvasItemCenter(item: CanvasItem) {

@@ -22,10 +22,15 @@ import {
 } from "@/components/conversation/conversation-types"
 import { CanvasItem } from "@/components/canvas/canvas-types"
 import {
+  branchSourceCompatibleModels,
   models,
   qualities,
   sizes,
 } from "@/components/generated-image/generated-image-types"
+import {
+  BranchMode,
+  defaultBranchMode,
+} from "@/components/domain/branch-mode"
 import {
   applySetStateAction,
   buildGeneratedImageViews,
@@ -55,6 +60,8 @@ type AiCanvasState = {
   messages: ConversationMessage[]
   canvasItems: CanvasItem[]
   selectedItemId: string | null
+  generationSourceAssetId: string | null
+  branchMode: BranchMode
   selectedMessageId: string | null
   focusRequest: {
     centerX: number
@@ -80,6 +87,8 @@ const initialAiCanvasState: AiCanvasState = {
   messages: [],
   canvasItems: [],
   selectedItemId: null,
+  generationSourceAssetId: null,
+  branchMode: defaultBranchMode,
   selectedMessageId: null,
   focusRequest: null,
 }
@@ -111,6 +120,8 @@ export function useAiCanvasController(initialConversationId: string | null = nul
     messages,
     canvasItems,
     selectedItemId,
+    generationSourceAssetId,
+    branchMode,
     selectedMessageId,
     focusRequest,
   } = state
@@ -185,6 +196,19 @@ export function useAiCanvasController(initialConversationId: string | null = nul
       draft.selectedItemId = applySetStateAction(draft.selectedItemId, next)
     })
   }
+  const setGenerationSourceAssetId = (next: SetStateAction<string | null>) => {
+    dispatch((draft) => {
+      draft.generationSourceAssetId = applySetStateAction(
+        draft.generationSourceAssetId,
+        next,
+      )
+    })
+  }
+  const setBranchMode = (next: SetStateAction<BranchMode>) => {
+    dispatch((draft) => {
+      draft.branchMode = applySetStateAction(draft.branchMode, next)
+    })
+  }
   const setSelectedMessageId = (next: SetStateAction<string | null>) => {
     dispatch((draft) => {
       draft.selectedMessageId = applySetStateAction(draft.selectedMessageId, next)
@@ -206,7 +230,13 @@ export function useAiCanvasController(initialConversationId: string | null = nul
     Boolean(conversationId)
 
   const generatedImages = useMemo(() => buildGeneratedImageViews(messages), [messages])
-  const assets = useMemo(() => generatedImages.map((image) => image.asset), [generatedImages])
+  const selectedSourceImage = useMemo(
+    () =>
+      generationSourceAssetId
+        ? generatedImages.find((image) => image.asset.id === generationSourceAssetId) ?? null
+        : null,
+    [generatedImages, generationSourceAssetId],
+  )
   const results = useMemo(() => buildHistoryResults(generatedImages), [generatedImages])
   const imagesByMessageId = useMemo(() => groupImagesByMessageId(generatedImages), [generatedImages])
   const pendingMessages = useMemo(
@@ -219,6 +249,14 @@ export function useAiCanvasController(initialConversationId: string | null = nul
     [messages],
   )
   const isCanvasGenerating = isGenerating || pendingMessages.length > 0
+
+  function resolveBranchCompatibleModel(nextModel: string) {
+    return branchSourceCompatibleModels.includes(
+      nextModel as (typeof branchSourceCompatibleModels)[number],
+    )
+      ? nextModel
+      : branchSourceCompatibleModels[0]
+  }
 
   async function refreshMessages(targetConversationId: string, cancelled: boolean) {
     const nextMessages = await readConversationMessages(targetConversationId)
@@ -334,8 +372,22 @@ export function useAiCanvasController(initialConversationId: string | null = nul
   }, [initialConversationId])
 
   useEffect(() => {
-    syncCanvasItemsWithAssets(assets, setCanvasItems)
-  }, [assets])
+    syncCanvasItemsWithAssets(generatedImages, setCanvasItems)
+  }, [generatedImages])
+
+  useEffect(() => {
+    if (!generationSourceAssetId) return
+
+    if (
+      branchSourceCompatibleModels.includes(
+        model as (typeof branchSourceCompatibleModels)[number],
+      )
+    ) {
+      return
+    }
+
+    setModel(branchSourceCompatibleModels[0])
+  }, [generationSourceAssetId, model])
 
   useEffect(() => {
     if (!conversationId) return
@@ -472,6 +524,8 @@ export function useAiCanvasController(initialConversationId: string | null = nul
     size: string
     quality: string
     outputCount?: number
+    branchMode?: BranchMode
+    parentAssetId?: string | null
   }) {
     if (!conversationId || !input.prompt.trim()) return
 
@@ -486,6 +540,8 @@ export function useAiCanvasController(initialConversationId: string | null = nul
         size: input.size,
         quality: input.quality,
         outputCount: input.outputCount ?? 1,
+        branchMode: input.branchMode,
+        parentAssetId: input.parentAssetId ?? null,
       })
 
       pendingTaskIdsRef.current.add(task.id)
@@ -548,6 +604,8 @@ export function useAiCanvasController(initialConversationId: string | null = nul
       size: task.size,
       quality: task.quality,
       outputCount: task.outputCount,
+      branchMode: task.branchMode ?? undefined,
+      parentAssetId: task.parentAssetId,
     })
   }
 
@@ -555,20 +613,54 @@ export function useAiCanvasController(initialConversationId: string | null = nul
     if (!task) return
 
     setPrompt(task.prompt)
-    setModel(task.model)
+    setModel(task.parentAssetId ? resolveBranchCompatibleModel(task.model) : task.model)
     setSize(task.size)
     setQuality(task.quality)
+    setGenerationSourceAssetId(task.parentAssetId)
+    setBranchMode(task.branchMode ?? defaultBranchMode)
+  }
+
+  function handleUseSelectedAssetAsGenerationSource() {
+    if (!selectedItemId) return
+
+    const item = canvasItems.find((entry) => entry.id === selectedItemId)
+    if (!item) return
+
+    setGenerationSourceAssetId(item.assetId)
+    setBranchMode(defaultBranchMode)
+    setModel((currentModel) => resolveBranchCompatibleModel(currentModel))
+  }
+
+  function handleUseAssetAsGenerationSource(asset: { id: string; messageId: string }) {
+    setGenerationSourceAssetId(asset.id)
+    setBranchMode(defaultBranchMode)
+    setModel((currentModel) => resolveBranchCompatibleModel(currentModel))
+    setSelectedMessageId(asset.messageId)
+
+    const item = canvasItems.find((entry) => entry.assetId === asset.id)
+    if (item) {
+      focusCanvasItem(item)
+    }
+  }
+
+  function handleClearGenerationSource() {
+    setGenerationSourceAssetId(null)
+    setBranchMode(defaultBranchMode)
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!canGenerate) return
 
+    const nextModel = selectedSourceImage ? resolveBranchCompatibleModel(model) : model
+
     await submitGeneration({
       prompt: prompt.trim(),
-      model,
+      model: nextModel,
       size,
       quality,
+      branchMode: selectedSourceImage ? branchMode : undefined,
+      parentAssetId: selectedSourceImage?.asset.id ?? null,
     })
   }
 
@@ -594,6 +686,9 @@ export function useAiCanvasController(initialConversationId: string | null = nul
     isCanvasGenerating,
     pendingMessages,
     selectedItemId,
+    generationSourceAssetId,
+    branchMode,
+    selectedSourceImage,
     setProviderConfig,
     setDisplayPreferences,
     setPrompt,
@@ -602,11 +697,16 @@ export function useAiCanvasController(initialConversationId: string | null = nul
     setSize,
     setCanvasItems,
     setSelectedItemId,
+    setGenerationSourceAssetId,
+    setBranchMode,
     handleSelectResult,
     handleSelectAsset,
     handleSelectMessage,
     handleRetryTask,
     handleUseTaskAsDraft,
+    handleUseAssetAsGenerationSource,
+    handleUseSelectedAssetAsGenerationSource,
+    handleClearGenerationSource,
     handleSubmit,
   }
 }

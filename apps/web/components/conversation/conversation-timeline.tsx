@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  GitBranchPlus,
   LoaderCircle,
   MessageSquareQuote,
   PencilLine,
@@ -44,6 +45,7 @@ type ConversationTimelineProps = {
   onAssetSelect: (asset: ImageAsset) => void
   onMessageSelect: (message: ConversationMessage) => void
   onRetryTask: (task: DrawTaskRecord) => void
+  onUseAssetAsGenerationSource: (asset: ImageAsset) => void
   onUseTaskAsDraft: (task: DrawTaskRecord) => void
 }
 
@@ -67,6 +69,7 @@ type AssistantBodyContext = {
   images: GeneratedImageView[]
   message: ConversationMessage
   onAssetSelect: (asset: ImageAsset) => void
+  onUseAssetAsGenerationSource: (asset: ImageAsset) => void
   presentation: MessageStatusPresentation
 }
 
@@ -157,6 +160,7 @@ export function ConversationTimeline({
   onAssetSelect,
   onMessageSelect,
   onRetryTask,
+  onUseAssetAsGenerationSource,
   onUseTaskAsDraft,
 }: ConversationTimelineProps) {
   const containerClassName = [
@@ -207,6 +211,7 @@ export function ConversationTimeline({
                 onAssetSelect={onAssetSelect}
                 onMessageSelect={onMessageSelect}
                 onRetryTask={onRetryTask}
+                onUseAssetAsGenerationSource={onUseAssetAsGenerationSource}
                 onUseTaskAsDraft={onUseTaskAsDraft}
               />
             ))}
@@ -227,6 +232,7 @@ function MessageCard({
   onAssetSelect,
   onMessageSelect,
   onRetryTask,
+  onUseAssetAsGenerationSource,
   onUseTaskAsDraft,
 }: {
   images: GeneratedImageView[]
@@ -238,6 +244,7 @@ function MessageCard({
   onAssetSelect: (asset: ImageAsset) => void
   onMessageSelect: (message: ConversationMessage) => void
   onRetryTask: (task: DrawTaskRecord) => void
+  onUseAssetAsGenerationSource: (asset: ImageAsset) => void
   onUseTaskAsDraft: (task: DrawTaskRecord) => void
 }) {
   const isUser = message.role === "user"
@@ -324,6 +331,7 @@ function MessageCard({
           imageDisplayPreset={imageDisplayPreset}
           message={message}
           onAssetSelect={onAssetSelect}
+          onUseAssetAsGenerationSource={onUseAssetAsGenerationSource}
         />
       ) : null}
     </article>
@@ -360,12 +368,14 @@ function AssistantMessageBody({
   imageDisplayFields,
   imageDisplayPreset,
   onAssetSelect,
+  onUseAssetAsGenerationSource,
 }: {
   message: ConversationMessage
   images: GeneratedImageView[]
   imageDisplayFields: GeneratedImageDisplayFieldOverrides
   imageDisplayPreset: GeneratedImageDisplayPresetKey
   onAssetSelect: (asset: ImageAsset) => void
+  onUseAssetAsGenerationSource: (asset: ImageAsset) => void
 }) {
   const presentation = getMessageStatusPresentation(message)
   const context: AssistantBodyContext = {
@@ -374,6 +384,7 @@ function AssistantMessageBody({
     images,
     message,
     onAssetSelect,
+    onUseAssetAsGenerationSource,
     presentation,
   }
 
@@ -498,6 +509,7 @@ function renderSucceededAssistantBody({
   imageDisplayPreset,
   images,
   onAssetSelect,
+  onUseAssetAsGenerationSource,
 }: AssistantBodyContext) {
   if (images.length === 0) {
     return (
@@ -512,23 +524,35 @@ function renderSucceededAssistantBody({
       <AssistantAssetsHeader statusLabel={`${images.length} 张`} />
       <div className="grid grid-cols-2 gap-2">
         {images.map((image) => (
-          <button
-            key={image.id}
-            className="group rounded-md text-left transition hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-[oklch(0.55_0.14_168/0.28)] focus-visible:outline-none"
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation()
-              onAssetSelect(image.asset)
-            }}
-          >
-            <div className="relative aspect-square">
-              <GeneratedImagePresetCard
-                fieldOverrides={imageDisplayFields}
-                image={image}
-                preset={imageDisplayPreset}
-              />
-            </div>
-          </button>
+          <div className="space-y-1.5" key={image.id}>
+            <button
+              className="group block w-full rounded-md text-left transition hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-[oklch(0.55_0.14_168/0.28)] focus-visible:outline-none"
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                onAssetSelect(image.asset)
+              }}
+            >
+              <div className="relative aspect-square">
+                <GeneratedImagePresetCard
+                  fieldOverrides={imageDisplayFields}
+                  image={image}
+                  preset={imageDisplayPreset}
+                />
+              </div>
+            </button>
+            <button
+              className="inline-flex w-full items-center justify-center gap-1 rounded-full border border-[oklch(0.8_0.03_168)] bg-[oklch(0.97_0.015_168)] px-2 py-1.5 text-[11px] font-medium text-[oklch(0.28_0.07_168)] transition hover:border-[oklch(0.55_0.12_168)] hover:bg-white"
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                onUseAssetAsGenerationSource(image.asset)
+              }}
+            >
+              <GitBranchPlus className="size-3.5" />
+              基于此图继续
+            </button>
+          </div>
         ))}
       </div>
     </div>

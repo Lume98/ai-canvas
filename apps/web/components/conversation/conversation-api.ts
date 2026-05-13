@@ -3,6 +3,7 @@ import {
   ConversationMessage,
   DrawTaskRecord,
 } from "@/components/conversation/conversation-types"
+import type { BranchMode } from "@/components/domain/branch-mode"
 
 type ApiErrorPayload = {
   error?: string
@@ -90,6 +91,8 @@ export async function createConversationDrawTask(input: {
   size: string
   quality: string
   outputCount?: number
+  branchMode?: BranchMode
+  parentAssetId?: string | null
 }) {
   const response = await fetch("/api/draw-tasks", {
     method: "POST",
@@ -103,6 +106,8 @@ export async function createConversationDrawTask(input: {
       size: input.size,
       quality: input.quality,
       outputCount: input.outputCount ?? 1,
+      branchMode: input.branchMode ?? null,
+      parentAssetId: input.parentAssetId ?? null,
     }),
   })
   const payload = (await response.json()) as DrawTaskResponse

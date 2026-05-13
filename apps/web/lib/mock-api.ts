@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server"
 import { nanoid } from "nanoid"
 
+import {
+  BranchMode,
+  branchModes,
+  defaultBranchMode,
+} from "@/components/domain/branch-mode"
+
 const defaultOpenAIBaseUrl = "https://api.openai.com/v1"
 const taskSettleDelayMs = 1400
 
@@ -41,6 +47,7 @@ type DrawTaskRecord = {
   size: string
   quality: string
   outputCount: number
+  branchMode: BranchMode | null
   parentAssetId: string | null
   status: "queued" | "running" | "succeeded" | "failed" | "canceled"
   progress: number
@@ -89,6 +96,8 @@ type CreateTaskInput = {
   size: string
   quality: string
   outputCount?: number
+  branchMode?: BranchMode | null
+  parentAssetId?: string | null
 }
 
 type GenerateImageInput = {
@@ -347,7 +356,8 @@ function appendTaskToConversation(
     size: input.size,
     quality: input.quality,
     outputCount: Math.max(1, Math.min(input.outputCount ?? 1, 4)),
-    parentAssetId: null,
+    branchMode: input.parentAssetId ? (input.branchMode ?? defaultBranchMode) : null,
+    parentAssetId: input.parentAssetId ?? null,
     status: "queued",
     progress: 0,
     resultUrl: null,
@@ -611,6 +621,8 @@ function parseCreateTaskInput(payload: Record<string, unknown>) {
   const size = stringifyOptionalField(payload.size)?.trim() || "1024x1024"
   const quality = stringifyOptionalField(payload.quality)?.trim() || "auto"
   const outputCount = parseOutputCount(payload.outputCount)
+  const branchMode = parseBranchMode(payload.branchMode)
+  const parentAssetId = stringifyOptionalField(payload.parentAssetId)?.trim() || null
 
   if (!conversationId) {
     return { error: "conversationId 不能为空。" } as const
@@ -629,6 +641,8 @@ function parseCreateTaskInput(payload: Record<string, unknown>) {
     size,
     quality,
     outputCount,
+    branchMode: parentAssetId ? branchMode : null,
+    parentAssetId,
   } satisfies CreateTaskInput
 }
 
@@ -687,6 +701,14 @@ function parseOutputCount(value: unknown) {
   }
 
   return Math.max(1, Math.min(Math.trunc(value), 4))
+}
+
+function parseBranchMode(value: unknown): BranchMode | null {
+  if (typeof value !== "string") {
+    return null
+  }
+
+  return branchModes.includes(value as BranchMode) ? (value as BranchMode) : null
 }
 
 function resolveGeneratedImageSize(size: string) {
