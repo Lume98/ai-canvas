@@ -1,7 +1,7 @@
 import { DatabaseSync } from "node:sqlite"
+import { existsSync } from "node:fs"
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises"
 import path from "node:path"
-import { fileURLToPath } from "node:url"
 import { NextResponse } from "next/server"
 
 import {
@@ -19,10 +19,25 @@ const PNG_SIGNATURE = "\x89PNG\r\n\x1a\n"
 const GENERATED_IMAGE_FILENAME_PATTERN = /^[a-zA-Z0-9_-]+\.png$/
 const CONVERSATION_NOT_FOUND_CODE = "CONVERSATION_NOT_FOUND"
 
-const repoRoot = fileURLToPath(new URL("../../../../", import.meta.url))
+const repoRoot = resolveRepoRoot()
 const dataDir = path.join(repoRoot, ".data")
 const databasePath = path.join(dataDir, "ai-canvas.sqlite")
 const generatedImagesDir = path.join(dataDir, "generated-images")
+
+function resolveRepoRoot() {
+  const currentWorkingDirectory = process.cwd()
+  const workspaceRootCandidate = path.resolve(currentWorkingDirectory, "../..")
+
+  if (
+    existsSync(path.join(currentWorkingDirectory, "app")) &&
+    existsSync(path.join(currentWorkingDirectory, "package.json")) &&
+    existsSync(path.join(workspaceRootCandidate, "pnpm-workspace.yaml"))
+  ) {
+    return workspaceRootCandidate
+  }
+
+  return currentWorkingDirectory
+}
 
 type ProviderConfigRecord = {
   apiKey: string
@@ -346,7 +361,12 @@ function validateDrawTaskInput(payload: unknown): DrawTaskInput | ApiError {
 
   const rawOutputCount = data.outputCount
   const outputCount = rawOutputCount === undefined ? 1 : rawOutputCount
-  if (typeof outputCount !== "number" || !Number.isInteger(outputCount) || outputCount < 1 || outputCount > 4) {
+  if (
+    typeof outputCount !== "number" ||
+    !Number.isInteger(outputCount) ||
+    outputCount < 1 ||
+    outputCount > 4
+  ) {
     return apiError("输出图片数量仅支持 1 到 4。")
   }
 
@@ -424,7 +444,10 @@ async function generateOpenAiImages(
     throw apiError("Base URL 无效，仅支持 http 或 https 地址。", 400)
   }
 
-  const endpoint = new URL(sourceImageBytes ? "images/edits" : "images/generations", `${baseUrl}/`)
+  const endpoint = new URL(
+    sourceImageBytes ? "images/edits" : "images/generations",
+    `${baseUrl}/`,
+  )
   const prompt = compileBranchPrompt(input.prompt, input.branchMode ?? null)
 
   const response = sourceImageBytes
@@ -950,8 +973,14 @@ async function createSynchronousDrawTask(input: DrawTaskInput): Promise<DrawTask
     const sourceImageBytes = input.parentAssetId
       ? await readSourceImageBytes(input.parentAssetId)
       : undefined
-    const imageBytesList = await generateOpenAiImages(input, providerConfig, sourceImageBytes)
-    const persistedImages = await Promise.all(imageBytesList.map((imageBytes) => saveGeneratedImage(imageBytes)))
+    const imageBytesList = await generateOpenAiImages(
+      input,
+      providerConfig,
+      sourceImageBytes,
+    )
+    const persistedImages = await Promise.all(
+      imageBytesList.map((imageBytes) => saveGeneratedImage(imageBytes)),
+    )
 
     db.prepare(`
       UPDATE draw_tasks

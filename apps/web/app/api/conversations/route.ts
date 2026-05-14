@@ -1,4 +1,4 @@
-import { createConversation, listConversations } from "@/lib/server/ai-canvas-backend"
+import { createConversation, listConversations } from "@/app/api/_internal/ai-canvas-backend"
 
 export const runtime = "nodejs"
 

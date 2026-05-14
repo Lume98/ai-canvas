@@ -1,4 +1,4 @@
-import { readGeneratedImage } from "@/lib/server/ai-canvas-backend"
+import { readGeneratedImage } from "@/app/api/_internal/ai-canvas-backend"
 
 export const runtime = "nodejs"
 
