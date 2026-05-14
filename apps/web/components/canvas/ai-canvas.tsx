@@ -5,7 +5,7 @@ import { CSSProperties } from "react"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { CanvasStage } from "@/components/canvas/canvas-stage"
-import { FloatingCapsuleNav } from "@/components/floating-capsule-nav/floating-capsule-nav"
+import { CapsuleNav } from "@/components/capsule-nav/capsule-nav"
 import {
   AI_CANVAS_NAV_FOOTPRINT_CSS_VARIABLE,
   DEFAULT_AI_CANVAS_NAV_FOOTPRINT_PX,
@@ -71,6 +71,35 @@ export function AiCanvas({ initialConversationId = null }: AiCanvasProps) {
   const layoutStyle: AiCanvasLayoutStyle = {
     [AI_CANVAS_NAV_FOOTPRINT_CSS_VARIABLE]: `${DEFAULT_AI_CANVAS_NAV_FOOTPRINT_PX}px`,
   }
+  const capsulePanelContext = {
+    conversation: {
+      imagesByMessageId,
+      isBusy: isGenerating,
+      isLoading: isConversationLoading,
+      messages,
+      selectedMessageId,
+    },
+    display: {
+      imageDisplayFields: displayPreferences.imageDisplayFields,
+      imageDisplayPreset: displayPreferences.imageDisplayPreset,
+    },
+    history: {
+      results,
+    },
+    prompts: {
+      items: promptSeeds,
+    },
+    user: {},
+    actions: {
+      onAssetSelect: handleSelectAsset,
+      onMessageSelect: handleSelectMessage,
+      onPromptSelect: setPrompt,
+      onResultSelect: handleSelectResult,
+      onRetryTask: handleRetryTask,
+      onUseAssetAsGenerationSource: handleUseAssetAsGenerationSource,
+      onUseTaskAsDraft: handleUseTaskAsDraft,
+    },
+  }
 
   return (
     <main
@@ -81,26 +110,11 @@ export function AiCanvas({ initialConversationId = null }: AiCanvasProps) {
       )}
       style={layoutStyle}
     >
-      <FloatingCapsuleNav
-        conversationMessages={messages}
-        imageDisplayFields={displayPreferences.imageDisplayFields}
-        imageDisplayPreset={displayPreferences.imageDisplayPreset}
-        imagesByMessageId={imagesByMessageId}
-        isBusy={isGenerating}
-        isConversationLoading={isConversationLoading}
+      <CapsuleNav
         layoutRootRef={layoutRootRef}
-        prompts={promptSeeds}
-        results={results}
-        selectedMessageId={selectedMessageId}
-        onAssetSelect={handleSelectAsset}
+        panelContext={capsulePanelContext}
         onConfigChange={setProviderConfig}
         onDisplayPreferencesChange={setDisplayPreferences}
-        onMessageSelect={handleSelectMessage}
-        onPromptSelect={setPrompt}
-        onResultSelect={handleSelectResult}
-        onRetryTask={handleRetryTask}
-        onUseAssetAsGenerationSource={handleUseAssetAsGenerationSource}
-        onUseTaskAsDraft={handleUseTaskAsDraft}
       />
       <section className="relative flex h-full min-h-0 flex-col overflow-hidden">
         <CanvasStage

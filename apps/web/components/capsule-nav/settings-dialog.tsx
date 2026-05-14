@@ -10,7 +10,7 @@ import { SettingsForm } from "@/components/settings/settings-form"
 import { type AiProviderConfig } from "@/components/settings/config/ai-provider-config"
 import { type CanvasDisplayPreferences } from "@/components/settings/config/display-preferences"
 
-type FloatingCapsuleSettingsDialogProps = {
+type CapsuleSettingsDialogProps = {
   isOpen: boolean
   onClose: () => void
   onConfigChange: (config: AiProviderConfig) => void
@@ -18,13 +18,13 @@ type FloatingCapsuleSettingsDialogProps = {
   titleId: string
 }
 
-export function FloatingCapsuleSettingsDialog({
+export function CapsuleSettingsDialog({
   isOpen,
   onClose,
   onConfigChange,
   onDisplayPreferencesChange,
   titleId,
-}: FloatingCapsuleSettingsDialogProps) {
+}: CapsuleSettingsDialogProps) {
   useEffect(() => {
     if (!isOpen) return
 
