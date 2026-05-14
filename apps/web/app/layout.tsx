@@ -1,6 +1,7 @@
 import { Geist_Mono, Inter } from "next/font/google"
 
 import "@workspace/ui/globals.css"
+import "./scrollbar.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@workspace/ui/components/sonner"
 import { TooltipProvider } from "@workspace/ui/components/tooltip"

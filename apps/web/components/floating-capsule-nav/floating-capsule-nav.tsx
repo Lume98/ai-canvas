@@ -3,8 +3,8 @@
 import { type RefObject, useEffect, useId, useRef, useState } from "react"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { AiProviderConfig } from "@/components/settings/ai-config"
-import { CanvasDisplayPreferences } from "@/components/settings/display-preferences"
+import { type AiProviderConfig } from "@/components/settings/config/ai-provider-config"
+import { type CanvasDisplayPreferences } from "@/components/settings/config/display-preferences"
 import { FloatingCapsuleNavButton } from "./floating-capsule-nav-button"
 import { useCapsuleNavFootprint } from "./floating-capsule-nav-layout"
 import {

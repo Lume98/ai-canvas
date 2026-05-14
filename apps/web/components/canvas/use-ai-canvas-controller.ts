@@ -6,7 +6,7 @@ import { toast } from "@workspace/ui/components/sonner"
 import {
   defaultAiProviderConfig,
   readAiProviderConfig,
-} from "@/components/settings/ai-config"
+} from "@/components/settings/config/ai-provider-config"
 import {
   createConversation,
   createConversationDrawTask,
@@ -14,10 +14,10 @@ import {
   readConversationMessages,
 } from "@/components/conversation/conversation-api"
 import {
-  CanvasDisplayPreferences,
+  type CanvasDisplayPreferences,
   defaultCanvasDisplayPreferences,
   readCanvasDisplayPreferences,
-} from "@/components/settings/display-preferences"
+} from "@/components/settings/config/display-preferences"
 import {
   ConversationMessage,
   promptSeeds,
