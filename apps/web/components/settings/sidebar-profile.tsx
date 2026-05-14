@@ -130,7 +130,10 @@ export function SidebarProfile({
                 <X className="size-4" />
               </Button>
             </header>
-            <SettingsForm onConfigChange={onConfigChange} />
+            <SettingsForm
+              onConfigChange={onConfigChange}
+              onSaveSuccess={() => setIsSettingsOpen(false)}
+            />
           </div>
         </div>
       ) : null}

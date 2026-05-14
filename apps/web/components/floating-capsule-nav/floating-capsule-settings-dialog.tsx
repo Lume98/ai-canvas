@@ -74,6 +74,7 @@ export function FloatingCapsuleSettingsDialog({
         <SettingsForm
           onConfigChange={onConfigChange}
           onDisplayPreferencesChange={onDisplayPreferencesChange}
+          onSaveSuccess={onClose}
         />
       </div>
     </div>

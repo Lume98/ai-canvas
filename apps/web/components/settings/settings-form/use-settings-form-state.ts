@@ -174,10 +174,12 @@ export function useSettingsFormState({
 
       notifySettingsChange(config, displayPreferences)
       setStatus("配置已保存")
+      return true
     } catch (caughtError) {
       setStatus(
         caughtError instanceof Error ? caughtError.message : "保存接口配置失败。",
       )
+      return false
     } finally {
       setIsSaving(false)
     }

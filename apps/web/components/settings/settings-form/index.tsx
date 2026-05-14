@@ -1,9 +1,10 @@
 "use client"
 
-import { FormEvent } from "react"
+import { FormEvent, useEffect, useRef } from "react"
 import { RotateCcw, Save } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
+import { toast } from "@workspace/ui/components/sonner"
 import {
   defaultOpenAIBaseUrl,
   type AiProviderConfig,
@@ -15,12 +16,15 @@ import { useSettingsFormState } from "@/components/settings/settings-form/use-se
 type SettingsFormProps = {
   onConfigChange?: (config: AiProviderConfig) => void
   onDisplayPreferencesChange?: (preferences: CanvasDisplayPreferences) => void
+  onSaveSuccess?: () => void
 }
 
 export function SettingsForm({
   onConfigChange,
   onDisplayPreferencesChange,
+  onSaveSuccess,
 }: SettingsFormProps) {
+  const closeTimerRef = useRef<number | null>(null)
   const {
     apiKey,
     baseUrl,
@@ -41,9 +45,32 @@ export function SettingsForm({
     onDisplayPreferencesChange,
   })
 
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current !== null) {
+        window.clearTimeout(closeTimerRef.current)
+      }
+    }
+  }, [])
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    await saveSettings()
+
+    const isSaved = await saveSettings()
+    if (!isSaved) return
+
+    toast.success("配置已保存")
+
+    if (onSaveSuccess) {
+      if (closeTimerRef.current !== null) {
+        window.clearTimeout(closeTimerRef.current)
+      }
+
+      closeTimerRef.current = window.setTimeout(() => {
+        onSaveSuccess()
+        closeTimerRef.current = null
+      }, 900)
+    }
   }
 
   const formId = "settings-form"
