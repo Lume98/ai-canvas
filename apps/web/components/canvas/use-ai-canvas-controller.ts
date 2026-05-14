@@ -1,6 +1,7 @@
 import { FormEvent, SetStateAction, useEffect, useMemo, useRef } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { useImmerReducer } from "use-immer"
+import { toast } from "@workspace/ui/components/sonner"
 
 import {
   defaultAiProviderConfig,
@@ -339,8 +340,9 @@ export function useAiCanvasController(initialConversationId: string | null = nul
   ): Promise<ConversationSyncResult | null> {
     if (isCancelled() || activeConversationIdRef.current !== targetConversationId) return null
 
+    clearActiveConversation()
     const conversation = await createConversation("当前画图会话")
-    if (isCancelled() || activeConversationIdRef.current !== targetConversationId) return null
+    if (isCancelled()) return null
 
     activateConversation(conversation.id)
     setError("")
@@ -380,6 +382,7 @@ export function useAiCanvasController(initialConversationId: string | null = nul
       if (isCancelled()) return null
       if (!existingConversationErrorNeedsReset(caughtError)) throw caughtError
 
+      toast.warning("会话不存在，已为你创建新的干净会话。")
       return createAndActivateConversation(isCancelled)
     }
   }
@@ -412,6 +415,7 @@ export function useAiCanvasController(initialConversationId: string | null = nul
         throw caughtError
       }
 
+      toast.warning("会话不存在，已为你创建新的干净会话。")
       return recoverConversation(targetConversationId, isCancelled)
     }
   }
@@ -709,6 +713,7 @@ export function useAiCanvasController(initialConversationId: string | null = nul
     } catch (caughtError) {
       if (existingConversationErrorNeedsReset(caughtError)) {
         try {
+          toast.warning("会话不存在，已为你创建新的干净会话。")
           const recoveredConversation = await recoverConversation(
             requestedConversationId,
           )

@@ -9,6 +9,7 @@ import {
   WandSparkles,
   X,
 } from "lucide-react"
+import { Button } from "@workspace/ui/components/button"
 
 import {
   PromptInput,
@@ -40,7 +41,6 @@ type ParameterSelectName = "model" | "size" | "quality"
 type PromptComposerProps = {
   branchMode: BranchMode
   canGenerate: boolean
-  error: string
   generationSourceLabel: string | null
   hasGenerationSource: boolean
   isGenerating: boolean
@@ -63,7 +63,6 @@ type PromptComposerProps = {
 export function PromptComposer({
   branchMode,
   canGenerate,
-  error,
   generationSourceLabel,
   hasGenerationSource,
   isGenerating,
@@ -120,14 +119,16 @@ export function PromptComposer({
                   ) : null}
                 </div>
               </div>
-              <button
-                className="inline-flex items-center gap-1 rounded-full border border-[oklch(0.74_0.04_168)] bg-white/80 px-2 py-1 text-[11px] text-[oklch(0.3_0.05_168)] transition hover:border-[oklch(0.55_0.12_168)]"
+              <Button
+                className="h-7 rounded-full px-2 text-[11px]"
+                size="sm"
                 type="button"
+                variant="outline"
                 onClick={onClearGenerationSource}
               >
                 <X className="size-3" />
                 清除
-              </button>
+              </Button>
             </div>
           ) : null}
           {hasGenerationSource ? (
@@ -252,11 +253,6 @@ export function PromptComposer({
         </PromptInputFooter>
       </PromptInput>
 
-      {error ? (
-        <div className="mt-3 rounded-md border border-[oklch(0.67_0.18_28)] bg-[oklch(0.96_0.03_28)] px-3 py-2 text-sm text-[oklch(0.38_0.14_28)]">
-          {error}
-        </div>
-      ) : null}
     </div>
   )
 }

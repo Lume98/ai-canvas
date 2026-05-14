@@ -38,7 +38,6 @@ export function AiCanvas({ initialConversationId = null }: AiCanvasProps) {
     model,
     size,
     quality,
-    error,
     canGenerate,
     generatedImages,
     canvasItems,
@@ -122,7 +121,6 @@ export function AiCanvas({ initialConversationId = null }: AiCanvasProps) {
           <PromptComposer
             branchMode={branchMode}
             canGenerate={canGenerate}
-            error={error}
             generationSourceLabel={
               selectedSourceImage
                 ? `基于已选图片继续生成 · 第 ${selectedSourceImage.generationOrder} 轮`

@@ -107,14 +107,6 @@ type GenerateImageInput = {
   quality: string
 }
 
-const imagePalettes = [
-  { top: "#f6d365", bottom: "#fda085", accent: "#7c3aed" },
-  { top: "#84fab0", bottom: "#8fd3f4", accent: "#0f766e" },
-  { top: "#cfd9df", bottom: "#e2ebf0", accent: "#1d4ed8" },
-  { top: "#fbc2eb", bottom: "#a6c1ee", accent: "#be123c" },
-  { top: "#fddb92", bottom: "#d1fdff", accent: "#0f172a" },
-]
-
 const state = createInitialState()
 
 export function getProviderConfig() {
@@ -265,16 +257,11 @@ export function readGeneratedImage(filename: string) {
     return errorResponse("图片不存在。", 404)
   }
 
-  const svg = buildMockSvg(asset)
+  if (!asset.url) {
+    return errorResponse("图片地址不存在。", 404)
+  }
 
-  return new NextResponse(svg, {
-    status: 200,
-    headers: {
-      "Content-Type": "image/svg+xml; charset=utf-8",
-      "Cache-Control": "public, max-age=60",
-      "X-Content-Type-Options": "nosniff",
-    },
-  })
+  return NextResponse.redirect(asset.url, 302)
 }
 
 function createInitialState(): MockApiState {
@@ -536,6 +523,8 @@ function buildAsset(input: {
   const slug = slugify(input.prompt)
   const assetId = buildId("asset")
   const filename = `${slug || "image"}-${assetId}.svg`
+  const randomId = buildId("rand")
+  const randomImageUrl = `https://picsum.photos/${input.width}/${input.height}?random=${randomId}`
 
   return {
     id: assetId,
@@ -543,7 +532,7 @@ function buildAsset(input: {
     conversationId: input.conversationId,
     messageId: input.messageId,
     filename,
-    url: `/api/generated-images/${filename}`,
+    url: randomImageUrl,
     width: input.width,
     height: input.height,
     sortOrder: input.sortOrder,
@@ -587,31 +576,6 @@ function buildMessage(input: {
 
 function findAssetByFilename(filename: string) {
   return state.assetsByFilename.get(filename) ?? null
-}
-
-function buildMockSvg(asset: ImageAsset) {
-  const palette = imagePalettes[hashString(asset.filename) % imagePalettes.length]!
-  const title = escapeXml(asset.filename.replace(/\.svg$/i, ""))
-  const subtitle = escapeXml(`${asset.width}x${asset.height}`)
-
-  return [
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${asset.width}" height="${asset.height}" viewBox="0 0 ${asset.width} ${asset.height}" role="img" aria-labelledby="title desc">`,
-    `<title id="title">${title}</title>`,
-    `<desc id="desc">Mock generated image ${subtitle}</desc>`,
-    "<defs>",
-    `<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">`,
-    `<stop offset="0%" stop-color="${palette.top}"/>`,
-    `<stop offset="100%" stop-color="${palette.bottom}"/>`,
-    "</linearGradient>",
-    "</defs>",
-    `<rect width="${asset.width}" height="${asset.height}" fill="url(#bg)"/>`,
-    `<circle cx="${Math.round(asset.width * 0.24)}" cy="${Math.round(asset.height * 0.26)}" r="${Math.round(Math.min(asset.width, asset.height) * 0.12)}" fill="${palette.accent}" fill-opacity="0.18"/>`,
-    `<circle cx="${Math.round(asset.width * 0.76)}" cy="${Math.round(asset.height * 0.34)}" r="${Math.round(Math.min(asset.width, asset.height) * 0.18)}" fill="#ffffff" fill-opacity="0.2"/>`,
-    `<rect x="${Math.round(asset.width * 0.12)}" y="${Math.round(asset.height * 0.62)}" width="${Math.round(asset.width * 0.76)}" height="${Math.round(asset.height * 0.18)}" rx="${Math.round(Math.min(asset.width, asset.height) * 0.03)}" fill="#ffffff" fill-opacity="0.3"/>`,
-    `<text x="${Math.round(asset.width * 0.12)}" y="${Math.round(asset.height * 0.23)}" font-family="Arial, sans-serif" font-size="${Math.max(24, Math.round(Math.min(asset.width, asset.height) * 0.046))}" fill="#172554" font-weight="700">AI Canvas Mock</text>`,
-    `<text x="${Math.round(asset.width * 0.12)}" y="${Math.round(asset.height * 0.72)}" font-family="Arial, sans-serif" font-size="${Math.max(16, Math.round(Math.min(asset.width, asset.height) * 0.03))}" fill="#0f172a" fill-opacity="0.78">${subtitle}</text>`,
-    "</svg>",
-  ].join("")
 }
 
 function parseCreateTaskInput(payload: Record<string, unknown>) {
@@ -823,24 +787,6 @@ function slugify(value: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 24)
-}
-
-function hashString(value: string) {
-  let hash = 0
-
-  for (let index = 0; index < value.length; index += 1) {
-    hash = (hash * 31 + value.charCodeAt(index)) >>> 0
-  }
-
-  return hash
-}
-
-function escapeXml(value: string) {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
