@@ -14,9 +14,15 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import { CanvasHistory } from "@/components/canvas/canvas-history"
 import { ConversationTimeline } from "@/components/conversation/conversation-timeline"
-import { GeneratedImageView, HistoryResult } from "@/components/generated-image/generated-image-types"
+import {
+  GeneratedImageView,
+  HistoryResult,
+} from "@/components/generated-image/generated-image-types"
 import { ImageAsset } from "@/components/domain/asset-types"
-import { ConversationMessage, DrawTaskRecord } from "@/components/conversation/conversation-types"
+import {
+  ConversationMessage,
+  DrawTaskRecord,
+} from "@/components/conversation/conversation-types"
 import {
   GeneratedImageDisplayFieldOverrides,
   GeneratedImageDisplayPresetKey,
@@ -110,20 +116,22 @@ type FloatingPanelSchema = {
 }
 
 const capsulePanelClassName =
-  "pointer-events-auto flex max-h-[min(560px,calc(100svh-32px))] w-[min(344px,calc(100vw-94px))] flex-col overflow-hidden rounded-[28px] border border-white/65 bg-[linear-gradient(180deg,oklch(0.986_0.01_95_/0.96)_0%,oklch(0.958_0.02_88_/0.97)_100%)] shadow-[0_30px_80px_oklch(0.2_0.03_245_/_0.2)] ring-1 ring-[oklch(0.84_0.02_88_/_0.72)] backdrop-blur-xl"
+  "pointer-events-auto flex max-h-[min(560px,calc(100svh-32px))] w-[min(344px,calc(100vw-94px))] flex-col overflow-hidden rounded-[28px] border border-[oklch(0.88_0.012_245)] bg-white shadow-[0_26px_70px_oklch(0.18_0.025_245_/_0.16)] ring-1 ring-white/80"
 
 const panelHeaderClassName =
-  "flex shrink-0 items-center justify-between gap-3 border-b border-[oklch(0.84_0.022_88)] bg-white/62 px-5 py-4"
+  "flex shrink-0 items-center justify-between gap-3 border-b border-[oklch(0.9_0.01_245)] bg-white px-5 py-4"
+
+const panelBodyClassName = "min-h-0 flex-1 overflow-y-auto bg-white p-4"
 
 const panelCardClassName =
-  "rounded-[22px] border border-white/70 bg-white/72 shadow-[inset_0_1px_0_oklch(1_0_0_/_0.65)] ring-1 ring-[oklch(0.84_0.02_88_/_0.5)]"
+  "rounded-lg border border-[oklch(0.9_0.01_245)] bg-white shadow-[0_8px_20px_oklch(0.22_0.02_245_/_0.06)]"
 
 const panelSchema: Record<FloatingPanelKey, FloatingPanelSchema> = {
   profile: {
     ariaLabel: "用户头像",
     eyebrow: "Profile",
     icon: (context) => (
-      <span className="flex size-8 items-center justify-center rounded-full bg-[linear-gradient(135deg,oklch(0.28_0.06_245)_0%,oklch(0.18_0.03_245)_100%)] text-[11px] font-semibold text-white shadow-[0_8px_18px_oklch(0.18_0.04_245_/_0.28)]">
+      <span className="flex size-8 items-center justify-center rounded-full border border-white/50 bg-[oklch(0.22_0.03_245)] text-[11px] font-semibold text-white shadow-[0_8px_18px_oklch(0.18_0.03_245_/_0.22)]">
         {context.initial || <User className="size-4" />}
       </span>
     ),
@@ -151,7 +159,7 @@ const panelSchema: Record<FloatingPanelKey, FloatingPanelSchema> = {
     render: (context) => (
       <div className="h-[min(520px,calc(100svh-152px))]">
         <ConversationTimeline
-          className="rounded-md border border-[oklch(0.82_0.02_245)]"
+          className="rounded-lg border border-[oklch(0.88_0.012_245)]"
           imagesByMessageId={context.imagesByMessageId}
           imageDisplayFields={context.imageDisplayFields}
           imageDisplayPreset={context.imageDisplayPreset}
@@ -207,34 +215,34 @@ const panelSchema: Record<FloatingPanelKey, FloatingPanelSchema> = {
 }
 
 export function buildPanelRegistry(
-  context: PanelRenderContext,
+  context: PanelRenderContext
 ): Record<FloatingPanelKey, FloatingPanelConfig> {
   return Object.fromEntries(
     floatingPanels
       .filter((panel) => panelSchema[panel].isVisible?.(context) ?? true)
       .map((panel) => {
-      const schema = panelSchema[panel]
+        const schema = panelSchema[panel]
 
-      return [
-        panel,
-        {
-          ariaLabel: schema.ariaLabel,
-          eyebrow: schema.eyebrow,
-          icon: schema.icon(context),
-          key: panel,
-          navLabel: schema.navLabel,
-          order: schema.order,
-          placement: schema.placement,
-          render: schema.render(context),
-          title: schema.title,
-        },
-      ]
-      }),
+        return [
+          panel,
+          {
+            ariaLabel: schema.ariaLabel,
+            eyebrow: schema.eyebrow,
+            icon: schema.icon(context),
+            key: panel,
+            navLabel: schema.navLabel,
+            order: schema.order,
+            placement: schema.placement,
+            render: schema.render(context),
+            title: schema.title,
+          },
+        ]
+      })
   ) as Record<FloatingPanelKey, FloatingPanelConfig>
 }
 
 export function useFloatingCapsulePanels(
-  options: FloatingCapsulePanelsOptions,
+  options: FloatingCapsulePanelsOptions
 ): FloatingCapsulePanelsModel {
   return useMemo(() => {
     const panelContext: PanelRenderContext = {
@@ -263,7 +271,7 @@ export function useFloatingCapsulePanels(
 
     const panelRegistry = buildPanelRegistry(panelContext)
     const allPanels = Object.values(panelRegistry).sort(
-      (left, right) => left.order - right.order,
+      (left, right) => left.order - right.order
     )
 
     return {
@@ -309,7 +317,7 @@ export function FloatingCapsulePanel({
     <aside className={capsulePanelClassName}>
       <header className={panelHeaderClassName}>
         <div>
-          <p className="text-xs font-medium tracking-[0.14em] text-[oklch(0.46_0.08_168)] uppercase">
+          <p className="text-xs font-medium tracking-[0.12em] text-[oklch(0.42_0.045_168)] uppercase">
             {panelConfig.eyebrow}
           </p>
           <h2 className="mt-1 text-base font-semibold text-[oklch(0.22_0.025_245)]">
@@ -320,6 +328,7 @@ export function FloatingCapsulePanel({
           variant="ghost"
           size="icon-sm"
           type="button"
+          className="text-[oklch(0.38_0.018_245)] hover:bg-[oklch(0.96_0.004_245)] hover:text-[oklch(0.18_0.025_245)]"
           aria-label="关闭面板"
           onClick={onClose}
         >
@@ -327,7 +336,7 @@ export function FloatingCapsulePanel({
         </Button>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-4">{children}</div>
+      <div className={panelBodyClassName}>{children}</div>
     </aside>
   )
 }
@@ -348,12 +357,9 @@ function ProfilePanelContent({
   return (
     <div>
       <div
-        className={cn(
-          panelCardClassName,
-          "flex items-center gap-3 px-4 py-4",
-        )}
+        className={cn(panelCardClassName, "flex items-center gap-3 px-4 py-4")}
       >
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,oklch(0.28_0.06_245)_0%,oklch(0.18_0.03_245)_100%)] text-sm font-semibold text-white shadow-[0_10px_24px_oklch(0.18_0.04_245_/_0.26)]">
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[oklch(0.2_0.03_245)] text-sm font-semibold text-white shadow-[0_10px_24px_oklch(0.18_0.03_245_/_0.22)]">
           {initial || <User className="size-4" />}
         </span>
         <div className="min-w-0">
@@ -369,7 +375,7 @@ function ProfilePanelContent({
         <Button
           className={cn(
             panelCardClassName,
-            "h-11 justify-start rounded-[18px] px-4 shadow-none",
+            "h-11 justify-start px-4 shadow-none hover:border-[oklch(0.82_0.016_245)] hover:bg-[oklch(0.985_0.002_245)]"
           )}
           variant="outline"
           type="button"
@@ -381,7 +387,7 @@ function ProfilePanelContent({
         <Button
           className={cn(
             panelCardClassName,
-            "h-11 justify-start rounded-[18px] border-transparent bg-white/56 px-4 text-[oklch(0.42_0.12_28)] shadow-none hover:border-white/70 hover:bg-white/78",
+            "h-11 justify-start px-4 text-[oklch(0.42_0.12_28)] shadow-none hover:border-[oklch(0.82_0.05_28)] hover:bg-[oklch(0.985_0.008_28)]"
           )}
           variant="ghost"
           type="button"
@@ -413,7 +419,7 @@ function PromptsPanelContent({
         <button
           className={cn(
             panelCardClassName,
-            "px-3 py-2 text-left text-xs leading-5 text-[oklch(0.34_0.025_245)] transition hover:border-[oklch(0.49_0.12_168)] hover:bg-white",
+            "px-3 py-2 text-left text-xs leading-5 text-[oklch(0.34_0.025_245)] transition hover:border-[oklch(0.52_0.1_168)] hover:bg-[oklch(0.985_0.004_168)]"
           )}
           key={item}
           type="button"

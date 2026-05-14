@@ -15,9 +15,15 @@ import {
 import { FloatingCapsuleSettingsDialog } from "./floating-capsule-settings-dialog"
 import { GeneratedImageDisplayPresetKey } from "@/components/generated-image/generated-image-display-presets"
 import { aiCanvasCapsuleRailPositionClassName } from "@/components/canvas/layout-tokens"
-import { GeneratedImageView, HistoryResult } from "@/components/generated-image/generated-image-types"
+import {
+  GeneratedImageView,
+  HistoryResult,
+} from "@/components/generated-image/generated-image-types"
 import { ImageAsset } from "@/components/domain/asset-types"
-import { ConversationMessage, DrawTaskRecord } from "@/components/conversation/conversation-types"
+import {
+  ConversationMessage,
+  DrawTaskRecord,
+} from "@/components/conversation/conversation-types"
 
 type FloatingPanel = FloatingPanelKey | null
 
@@ -25,7 +31,10 @@ const capsuleRailClassName =
   "pointer-events-none fixed top-1/2 z-40 flex -translate-y-1/2 items-center"
 
 const capsuleNavClassName =
-  "pointer-events-auto relative flex flex-col items-center gap-2 rounded-[28px] border border-white/70 bg-[linear-gradient(180deg,oklch(0.995_0.006_95_/0.94)_0%,oklch(0.955_0.02_88_/0.9)_100%)] p-2 shadow-[0_20px_54px_oklch(0.22_0.03_245_/_0.18)] ring-1 ring-[oklch(0.84_0.02_88_/_0.65)] backdrop-blur-xl"
+  "pointer-events-auto relative flex flex-col items-center gap-2 rounded-[28px] border border-[oklch(0.89_0.01_245)] bg-white p-2 shadow-[0_18px_48px_oklch(0.2_0.025_245_/_0.14)] ring-1 ring-white/80"
+
+const capsuleNavDividerClassName =
+  "h-px w-8 bg-[linear-gradient(90deg,transparent_0%,oklch(0.82_0.012_245)_50%,transparent_100%)]"
 
 type FloatingCapsuleNavProps = {
   conversationMessages: ConversationMessage[]
@@ -78,8 +87,8 @@ export function FloatingCapsuleNav({
   const navRef = useRef<HTMLElement | null>(null)
   const settingsTitleId = useId()
   const initial = userName.trim().charAt(0).toUpperCase() || "C"
-  const { leadingPanels, mainPanels, panelRegistry } =
-    useFloatingCapsulePanels({
+  const { leadingPanels, mainPanels, panelRegistry } = useFloatingCapsulePanels(
+    {
       conversationMessages,
       imageDisplayFields,
       imageDisplayPreset,
@@ -119,7 +128,8 @@ export function FloatingCapsuleNav({
       selectedMessageId,
       setProfileStatus,
       userName,
-    })
+    }
+  )
 
   useCapsuleNavFootprint({
     layoutRootRef,
@@ -160,7 +170,7 @@ export function FloatingCapsuleNav({
       <div
         className={cn(
           capsuleRailClassName,
-          aiCanvasCapsuleRailPositionClassName,
+          aiCanvasCapsuleRailPositionClassName
         )}
       >
         <nav
@@ -168,7 +178,6 @@ export function FloatingCapsuleNav({
           className={capsuleNavClassName}
           aria-label="画布快捷入口"
         >
-          <div className="pointer-events-none absolute inset-x-2 top-2 h-14 rounded-full bg-[linear-gradient(180deg,oklch(1_0_0_/_0.92)_0%,oklch(1_0_0_/_0)_100%)]" />
           {leadingPanels.map((panel) => (
             <FloatingCapsuleNavButton
               ariaLabel={panel.ariaLabel}
@@ -180,7 +189,7 @@ export function FloatingCapsuleNav({
               {panel.icon}
             </FloatingCapsuleNavButton>
           ))}
-          <div className="h-px w-8 bg-[linear-gradient(90deg,oklch(0.84_0.02_88_/_0)_0%,oklch(0.84_0.02_88_/_1)_50%,oklch(0.84_0.02_88_/_0)_100%)]" />
+          <div className={capsuleNavDividerClassName} />
           {mainPanels.map((panel) => (
             <FloatingCapsuleNavButton
               ariaLabel={panel.ariaLabel}

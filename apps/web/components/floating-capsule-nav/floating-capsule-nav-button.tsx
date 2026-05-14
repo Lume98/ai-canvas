@@ -20,10 +20,10 @@ export function FloatingCapsuleNavButton({
   return (
     <button
       className={cn(
-        "group relative z-10 flex w-12 flex-col items-center justify-center gap-1 overflow-hidden rounded-[20px] px-2 py-2.5 text-[oklch(0.31_0.022_245)] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[oklch(0.46_0.08_168_/_0.35)]",
+        "group relative flex w-12 flex-col items-center justify-center gap-1 overflow-hidden rounded-[20px] border border-transparent px-2 py-2.5 text-[oklch(0.34_0.02_245)] transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[oklch(0.46_0.08_168_/_0.34)] focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none",
         isActive
-          ? "bg-[linear-gradient(180deg,oklch(0.3_0.065_245)_0%,oklch(0.2_0.04_245)_100%)] text-white shadow-[0_14px_24px_oklch(0.18_0.04_245_/_0.28)]"
-          : "hover:bg-white/80 hover:text-[oklch(0.22_0.03_245)]",
+          ? "border-[oklch(0.24_0.035_245)] bg-[oklch(0.18_0.028_245)] text-white shadow-[0_12px_22px_oklch(0.16_0.03_245_/_0.24)]"
+          : "hover:border-[oklch(0.86_0.012_245)] hover:bg-[oklch(0.985_0.002_245)] hover:text-[oklch(0.2_0.025_245)] hover:shadow-[0_10px_22px_oklch(0.22_0.02_245_/_0.08)]"
       )}
       type="button"
       aria-label={ariaLabel}
@@ -32,22 +32,26 @@ export function FloatingCapsuleNavButton({
     >
       <span
         className={cn(
-          "absolute inset-x-2 top-1.5 h-4 rounded-full transition-opacity",
+          "absolute inset-x-2 top-1.5 h-3 rounded-full transition-opacity",
           isActive
-            ? "bg-[linear-gradient(180deg,oklch(1_0_0_/_0.2)_0%,oklch(1_0_0_/_0)_100%)] opacity-100"
-            : "bg-white/70 opacity-0 group-hover:opacity-100",
+            ? "bg-white/15 opacity-100"
+            : "bg-white opacity-0 group-hover:opacity-100"
         )}
       />
       <span
         className={cn(
-          "absolute left-1 top-1/2 h-7 w-1 -translate-y-1/2 rounded-full transition-all",
+          "absolute top-1/2 left-1 h-6 w-1 -translate-y-1/2 rounded-full transition-all",
           isActive
-            ? "bg-[oklch(0.78_0.13_85)] opacity-100"
-            : "bg-[oklch(0.78_0.13_85)] opacity-0 group-hover:opacity-55",
+            ? "bg-[oklch(0.72_0.11_168)] opacity-100"
+            : "bg-[oklch(0.72_0.11_168)] opacity-0 group-hover:opacity-60"
         )}
       />
-      {children}
-      <span className="text-[9px] font-medium tracking-[0.04em]">{label}</span>
+      <span className="relative z-10 flex size-8 items-center justify-center">
+        {children}
+      </span>
+      <span className="relative z-10 text-[9px] leading-none font-medium tracking-normal">
+        {label}
+      </span>
     </button>
   )
 }
