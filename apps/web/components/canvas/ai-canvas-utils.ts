@@ -12,7 +12,6 @@ import type { ImageAsset } from "@/components/domain/asset-types"
 import { CanvasItem } from "@/components/canvas/canvas-types"
 import {
   isConversationNotFoundError,
-  readDrawTask,
 } from "@/components/conversation/conversation-api"
 
 export function collectConversationAssets(messages: ConversationMessage[]): ImageAsset[] {
@@ -197,34 +196,6 @@ export function resolveNextSelectedMessageId(
   }
 
   return nextMessages.at(-1)?.id ?? null
-}
-
-function wait(durationMs: number) {
-  return new Promise((resolve) => {
-    window.setTimeout(resolve, durationMs)
-  })
-}
-
-export async function pollConversationTaskUntilSettled(
-  taskId: string,
-  conversationId: string,
-  options: {
-    onSettled: (task: Awaited<ReturnType<typeof readDrawTask>>) => Promise<void>
-  },
-) {
-  while (true) {
-    const task = await readDrawTask(taskId)
-
-    if (task.conversationId && task.conversationId !== conversationId) return
-
-    if (task.status === "queued" || task.status === "running") {
-      await wait(1200)
-      continue
-    }
-
-    await options.onSettled(task)
-    return
-  }
 }
 
 function compareConversationMessagesBySequence(

@@ -2,7 +2,7 @@ import {
   clearProviderConfig,
   getProviderConfig,
   saveProviderConfig,
-} from "@/lib/mock-api"
+} from "@/lib/server/ai-canvas-backend"
 
 export const runtime = "nodejs"
 

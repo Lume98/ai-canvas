@@ -40,7 +40,6 @@ import {
   collectConversationAssets,
   existingConversationErrorNeedsReset,
   groupImagesByMessageId,
-  pollConversationTaskUntilSettled,
   resolveNextSelectedMessageId,
   syncCanvasItemsWithAssets,
 } from "@/components/canvas/ai-canvas-utils"
@@ -114,7 +113,6 @@ export function useAiCanvasController(initialConversationId: string | null = nul
 
   const layoutRootRef = useRef<HTMLElement | null>(null)
   const activeConversationIdRef = useRef<string | null>(null)
-  const pendingTaskIdsRef = useRef<Set<string>>(new Set())
   const pendingFocusAssetIdRef = useRef<string | null>(null)
 
   const {
@@ -284,7 +282,6 @@ export function useAiCanvasController(initialConversationId: string | null = nul
   }
 
   function resetConversationScopedState() {
-    pendingTaskIdsRef.current.clear()
     pendingFocusAssetIdRef.current = null
     setMessages([])
     setCanvasItems([])
@@ -326,7 +323,6 @@ export function useAiCanvasController(initialConversationId: string | null = nul
     setSelectedMessageId((currentSelectedMessageId) =>
       resolveNextSelectedMessageId(currentSelectedMessageId, nextMessages),
     )
-    restorePendingTasks(nextMessages, targetConversationId)
 
     return {
       conversationId: targetConversationId,
@@ -418,16 +414,6 @@ export function useAiCanvasController(initialConversationId: string | null = nul
       toast.warning("会话不存在，已为你创建新的干净会话。")
       return recoverConversation(targetConversationId, isCancelled)
     }
-  }
-
-  async function refreshMessages(
-    targetConversationId: string,
-    isCancelled: CancellationGuard = () => false,
-  ) {
-    await loadConversationMessages(targetConversationId, {
-      isCancelled,
-      recoverOnMissing: true,
-    })
   }
 
   useEffect(() => {
@@ -529,70 +515,6 @@ export function useAiCanvasController(initialConversationId: string | null = nul
   }, [generationSourceAssetId, model])
 
   useEffect(() => {
-    if (!conversationId) return
-    const activeConversationId = conversationId
-
-    function queueFocusForTask(taskId: string, nextMessages: ConversationMessage[]) {
-      const asset = collectConversationAssets(nextMessages).find((entry) => entry.taskId === taskId)
-      if (!asset) return
-
-      pendingFocusAssetIdRef.current = asset.id
-      const item = canvasItems.find((entry) => entry.assetId === asset.id)
-
-      if (item) {
-        pendingFocusAssetIdRef.current = null
-        focusCanvasItem(item)
-      }
-    }
-
-    function syncPendingTasks(nextMessages: ConversationMessage[]) {
-      for (const message of nextMessages) {
-        if (!message.task) continue
-
-        if (message.task.status === "queued" || message.task.status === "running") {
-          if (!pendingTaskIdsRef.current.has(message.task.id)) startTaskPolling(message.task.id)
-        } else {
-          pendingTaskIdsRef.current.delete(message.task.id)
-        }
-      }
-    }
-
-    function startTaskPolling(taskId: string) {
-      if (pendingTaskIdsRef.current.has(taskId)) return
-
-      pendingTaskIdsRef.current.add(taskId)
-      void pollConversationTaskUntilSettled(taskId, activeConversationId, {
-        onSettled: async (task) => {
-          pendingTaskIdsRef.current.delete(taskId)
-          const syncResult = await loadConversationMessages(activeConversationId, {
-            recoverOnMissing: true,
-          })
-          if (!syncResult || syncResult.conversationId !== activeConversationId) return
-
-          const { messages: nextMessages } = syncResult
-          syncPendingTasks(nextMessages)
-
-          if (task.status === "succeeded") {
-            queueFocusForTask(task.id, nextMessages)
-          } else if (task.errorMessage) {
-            setError(task.errorMessage)
-          }
-        },
-      })
-    }
-
-    for (const message of messages) {
-      if (!message.task) continue
-
-      if (message.task.status === "queued" || message.task.status === "running") {
-        startTaskPolling(message.task.id)
-      } else {
-        pendingTaskIdsRef.current.delete(message.task.id)
-      }
-    }
-  }, [canvasItems, conversationId, messages])
-
-  useEffect(() => {
     const pendingAssetId = pendingFocusAssetIdRef.current
     if (!pendingAssetId) return
 
@@ -625,40 +547,6 @@ export function useAiCanvasController(initialConversationId: string | null = nul
     }
   }
 
-  function restorePendingTasks(nextMessages: ConversationMessage[], targetConversationId: string) {
-    for (const message of nextMessages) {
-      if (!message.task) continue
-
-      if (message.task.status === "queued" || message.task.status === "running") {
-        const taskId = message.task.id
-
-        if (!pendingTaskIdsRef.current.has(taskId)) {
-          pendingTaskIdsRef.current.add(taskId)
-          void pollConversationTaskUntilSettled(taskId, targetConversationId, {
-            onSettled: async (settledTask) => {
-              pendingTaskIdsRef.current.delete(taskId)
-              const syncResult = await loadConversationMessages(targetConversationId, {
-                recoverOnMissing: true,
-              })
-              if (!syncResult || syncResult.conversationId !== targetConversationId) return
-
-              const { messages: refreshedMessages } = syncResult
-              restorePendingTasks(refreshedMessages, targetConversationId)
-
-              if (settledTask.status === "succeeded") {
-                focusLatestTaskAsset(settledTask.id, refreshedMessages)
-              } else if (settledTask.errorMessage) {
-                setError(settledTask.errorMessage)
-              }
-            },
-          })
-        }
-      } else {
-        pendingTaskIdsRef.current.delete(message.task.id)
-      }
-    }
-  }
-
   async function submitGeneration(input: {
     prompt: string
     model: string
@@ -686,26 +574,16 @@ export function useAiCanvasController(initialConversationId: string | null = nul
         parentAssetId: input.parentAssetId ?? null,
       })
 
-      pendingTaskIdsRef.current.add(task.id)
-      await refreshMessages(targetConversationId)
-      await pollConversationTaskUntilSettled(task.id, targetConversationId, {
-        onSettled: async (settledTask) => {
-          pendingTaskIdsRef.current.delete(task.id)
-          const syncResult = await loadConversationMessages(targetConversationId, {
-            recoverOnMissing: true,
-          })
-          if (!syncResult || syncResult.conversationId !== targetConversationId) return
-
-          const { messages: nextMessages } = syncResult
-          restorePendingTasks(nextMessages, targetConversationId)
-
-          if (settledTask.status === "succeeded") {
-            focusLatestTaskAsset(settledTask.id, nextMessages)
-          } else if (settledTask.errorMessage) {
-            setError(settledTask.errorMessage)
-          }
-        },
+      const syncResult = await loadConversationMessages(targetConversationId, {
+        recoverOnMissing: true,
       })
+      if (!syncResult || syncResult.conversationId !== targetConversationId) return
+
+      if (task.status === "succeeded") {
+        focusLatestTaskAsset(task.id, syncResult.messages)
+      } else if (task.errorMessage) {
+        setError(task.errorMessage)
+      }
     }
 
     try {

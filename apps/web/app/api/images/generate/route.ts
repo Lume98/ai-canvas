@@ -1,4 +1,4 @@
-import { generateImage } from "@/lib/mock-api"
+import { generateImage } from "@/lib/server/ai-canvas-backend"
 
 export const runtime = "nodejs"
 export const maxDuration = 120

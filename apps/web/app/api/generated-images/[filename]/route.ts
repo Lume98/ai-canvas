@@ -1,4 +1,4 @@
-import { readGeneratedImage } from "@/lib/mock-api"
+import { readGeneratedImage } from "@/lib/server/ai-canvas-backend"
 
 export const runtime = "nodejs"
 

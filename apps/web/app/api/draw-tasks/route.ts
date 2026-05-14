@@ -1,4 +1,4 @@
-import { createDrawTask, listDrawTasks } from "@/lib/mock-api"
+import { createDrawTask, listDrawTasks } from "@/lib/server/ai-canvas-backend"
 
 export const runtime = "nodejs"
 

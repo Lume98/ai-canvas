@@ -3,25 +3,19 @@
 ## Startup Modes
 
 ```bash
-# Development: start web(next dev) + worker(uv serve) in parallel.
+# Development: start Next.js app.
 pnpm dev
 
 # Production-style local run:
-# 1) build web
-# 2) start worker
-# 3) wait until worker /v1/health is ready
-# 4) start web(next start)
 pnpm build
 pnpm server
 ```
 
 ## Runtime Boundary
 
-- `apps/web`: Next.js UI + BFF API proxy (`/api/*` -> worker `/v1/*`).
-- `apps/worker`: Python worker (FastAPI + background task loop).
+- `apps/web`: Next.js UI + Node runtime API。它直接读写 SQLite、调用 OpenAI Images API，并返回本地生成图片。
 
 ## Notes
 
-- Worker default health URL: `http://127.0.0.1:8766/v1/health`.
-- `pnpm server` uses a startup gate script at `scripts/wait-worker-ready.mjs`.
-- Worker data defaults to `.data/ai-canvas.sqlite` and `.data/generated-images`.
+- 数据默认存放在 `.data/ai-canvas.sqlite` 与 `.data/generated-images`。
+- 所有图像相关路由都运行在 Next.js Node runtime，不能部署到 Edge runtime。
