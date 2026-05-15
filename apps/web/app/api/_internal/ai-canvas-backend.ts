@@ -9,18 +9,23 @@ import type {
   ImageAsset as PrismaImageAsset,
   Message as PrismaMessage,
 } from "@/generated/prisma/client"
-
+import { firstValidationMessage } from "@/lib/validation-error"
 import {
-  branchModes,
-  type BranchMode,
-} from "@/components/domain/branch-mode"
+  DEFAULT_OPENAI_BASE_URL,
+  allowedBranchModes,
+  createConversationInputSchema,
+  drawTaskInputSchema,
+  isValidHttpBaseUrl,
+  normalizeBaseUrl,
+  providerConfigInputSchema,
+  standaloneImageInputSchema,
+  type DrawTaskInput,
+  type ProviderConfigInput,
+  type StandaloneImageInput,
+} from "@/lib/validations/ai-canvas"
 
-const DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1"
-const ALLOWED_MODELS = new Set(["gpt-image-2", "gpt-image-1.5", "gpt-image-1"])
-const ALLOWED_SIZES = new Set(["1024x1024", "1536x1024", "1024x1536", "auto"])
-const ALLOWED_QUALITIES = new Set(["auto", "high", "medium", "low"])
-const BRANCH_SOURCE_COMPATIBLE_MODELS = new Set(["gpt-image-1.5", "gpt-image-1"])
-const ALLOWED_BRANCH_MODES = new Set(branchModes)
+import { type BranchMode } from "@/components/domain/branch-mode"
+
 const PNG_SIGNATURE = "\x89PNG\r\n\x1a\n"
 const GENERATED_IMAGE_FILENAME_PATTERN = /^[a-zA-Z0-9_-]+\.png$/
 const CONVERSATION_NOT_FOUND_CODE = "CONVERSATION_NOT_FOUND"
@@ -95,24 +100,6 @@ type ConversationMessageRecord = {
   task?: DrawTaskRecord
 }
 
-type DrawTaskInput = {
-  conversationId: string
-  prompt: string
-  model: string
-  size: string
-  quality: string
-  outputCount: number
-  branchMode: BranchMode | null
-  parentAssetId: string | null
-}
-
-type StandaloneImageInput = {
-  prompt: string
-  model: string
-  size: string
-  quality: string
-}
-
 type PersistedImage = {
   filename: string
   width: number
@@ -123,11 +110,6 @@ type ApiError = {
   message: string
   status: number
   code?: string
-}
-
-type ProviderConfigInput = {
-  apiKey: string
-  baseUrl: string
 }
 
 const BRANCH_MODE_INSTRUCTIONS: Record<BranchMode, string> = {
@@ -141,28 +123,6 @@ const BRANCH_MODE_INSTRUCTIONS: Record<BranchMode, string> = {
 
 function buildId(prefix: string) {
   return `${prefix}_${crypto.randomUUID().replaceAll("-", "")}`
-}
-
-function normalizeBaseUrl(value: unknown) {
-  const baseUrl = typeof value === "string" ? value.trim().replace(/\/+$/, "") : ""
-  return baseUrl || DEFAULT_OPENAI_BASE_URL
-}
-
-function isValidHttpBaseUrl(baseUrl: string) {
-  try {
-    const parsed = new URL(baseUrl)
-    return parsed.protocol === "http:" || parsed.protocol === "https:"
-  } catch {
-    return false
-  }
-}
-
-function asObject(value: unknown) {
-  return typeof value === "object" && value !== null ? (value as Record<string, unknown>) : null
-}
-
-function asTrimmedString(value: unknown) {
-  return typeof value === "string" ? value.trim() : ""
 }
 
 function errorResponse(error: ApiError) {
@@ -185,82 +145,18 @@ async function readJson(request: Request) {
 }
 
 function validateProviderConfigInput(payload: unknown): ProviderConfigInput | ApiError {
-  const data = asObject(payload)
-  if (!data) return apiError("请求体不是有效对象。")
-
-  const apiKey = asTrimmedString(data.apiKey)
-  const baseUrl = normalizeBaseUrl(data.baseUrl)
-
-  if (!apiKey) return apiError("API Key 不能为空。")
-  if (!isValidHttpBaseUrl(baseUrl)) {
-    return apiError("Base URL 无效，仅支持 http 或 https 地址。")
-  }
-
-  return { apiKey, baseUrl }
+  const result = providerConfigInputSchema.safeParse(payload)
+  return result.success ? result.data : apiError(firstValidationMessage(result.error))
 }
 
 function validateStandaloneImageInput(payload: unknown): StandaloneImageInput | ApiError {
-  const data = asObject(payload)
-  if (!data) return apiError("请求体不是有效对象。")
-
-  const prompt = asTrimmedString(data.prompt)
-  const model = asTrimmedString(data.model || "gpt-image-2")
-  const size = asTrimmedString(data.size || "1024x1024")
-  const quality = asTrimmedString(data.quality || "auto")
-
-  if (!prompt) return apiError("提示词不能为空。")
-  if (prompt.length > 2400) return apiError("提示词过长，请控制在 2400 个字符以内。")
-  if (!ALLOWED_MODELS.has(model)) return apiError("不支持的图像模型。")
-  if (!ALLOWED_SIZES.has(size)) return apiError("不支持的图像尺寸。")
-  if (!ALLOWED_QUALITIES.has(quality)) return apiError("不支持的图像质量。")
-
-  return { prompt, model, size, quality }
+  const result = standaloneImageInputSchema.safeParse(payload)
+  return result.success ? result.data : apiError(firstValidationMessage(result.error))
 }
 
 function validateDrawTaskInput(payload: unknown): DrawTaskInput | ApiError {
-  const imageInput = validateStandaloneImageInput(payload)
-  if ("message" in imageInput) return imageInput
-
-  const data = asObject(payload)
-  if (!data) return apiError("请求体不是有效对象。")
-
-  const conversationId = asTrimmedString(data.conversationId)
-  if (!conversationId) return apiError("conversationId 不能为空。")
-
-  const rawOutputCount = data.outputCount
-  const outputCount = rawOutputCount === undefined ? 1 : rawOutputCount
-  if (
-    typeof outputCount !== "number" ||
-    !Number.isInteger(outputCount) ||
-    outputCount < 1 ||
-    outputCount > 4
-  ) {
-    return apiError("输出图片数量仅支持 1 到 4。")
-  }
-
-  const rawBranchMode = data.branchMode
-  const branchMode =
-    typeof rawBranchMode === "string" && rawBranchMode.trim() ? rawBranchMode.trim() : null
-
-  if (branchMode !== null && !ALLOWED_BRANCH_MODES.has(branchMode as BranchMode)) {
-    return apiError("不支持的分支模式。")
-  }
-
-  const parentAssetId = asTrimmedString(data.parentAssetId) || null
-
-  if (parentAssetId && !BRANCH_SOURCE_COMPATIBLE_MODELS.has(imageInput.model)) {
-    return apiError(
-      "当前模型不支持基于来源图继续生成，请切换到 GPT Image 1.5 或 GPT Image 1。",
-    )
-  }
-
-  return {
-    ...imageInput,
-    conversationId,
-    outputCount,
-    branchMode: parentAssetId ? (branchMode as BranchMode | null) : null,
-    parentAssetId,
-  }
+  const result = drawTaskInputSchema.safeParse(payload)
+  return result.success ? result.data : apiError(firstValidationMessage(result.error))
 }
 
 function compileBranchPrompt(prompt: string, branchMode: BranchMode | null) {
@@ -502,7 +398,7 @@ function toNullableString(value: unknown) {
 }
 
 function toNullableBranchMode(value: unknown) {
-  return typeof value === "string" && ALLOWED_BRANCH_MODES.has(value as BranchMode)
+  return typeof value === "string" && allowedBranchModes.has(value as BranchMode)
     ? (value as BranchMode)
     : null
 }
@@ -627,8 +523,8 @@ export async function clearProviderConfig() {
 }
 
 export async function createConversation(request: Request) {
-  const payload = asObject(await readJson(request))
-  const title = asTrimmedString(payload?.title) || "未命名会话"
+  const result = createConversationInputSchema.safeParse(await readJson(request))
+  const title = result.success ? result.data.title : "未命名会话"
   const conversationId = buildId("conversation")
   await initDatabase()
   const row = await prisma.conversation.create({
