@@ -1,4 +1,4 @@
-import { readConversation } from "@/app/api/_internal/ai-canvas-backend"
+import { readConversation } from "@/services/ai-canvas"
 
 export const runtime = "nodejs"
 

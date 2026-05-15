@@ -2,7 +2,7 @@ import {
   clearProviderConfig,
   getProviderConfig,
   saveProviderConfig,
-} from "@/app/api/_internal/ai-canvas-backend"
+} from "@/services/ai-canvas"
 
 export const runtime = "nodejs"
 

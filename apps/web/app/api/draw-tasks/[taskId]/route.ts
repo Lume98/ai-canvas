@@ -1,4 +1,4 @@
-import { readDrawTask } from "@/app/api/_internal/ai-canvas-backend"
+import { readDrawTask } from "@/services/ai-canvas"
 
 export const runtime = "nodejs"
 
