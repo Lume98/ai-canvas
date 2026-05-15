@@ -1,4 +1,4 @@
-import { readGeneratedImage } from "@/services/ai-canvas"
+import { readGeneratedImage } from "@/services"
 
 export const runtime = "nodejs"
 

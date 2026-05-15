@@ -13,8 +13,9 @@ model Conversation {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
-  messages Message[]
-  assets   ImageAsset[]
+  messages  Message[]
+  drawTasks DrawTask[]
+  assets    ImageAsset[]
 
   @@map("conversations")
 }
@@ -33,15 +34,18 @@ model Message {
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   assets       ImageAsset[]
 
+  requestedDrawTask DrawTask? @relation("DrawTaskRequestMessage")
+  repliedDrawTask   DrawTask? @relation("DrawTaskReplyMessage")
+
   @@index([conversationId, sortOrder, createdAt], map: "idx_messages_conversation_created_at")
   @@map("messages")
 }
 
 model DrawTask {
   id               String    @id
-  conversationId   String?   @map("conversation_id")
-  requestMessageId String?   @map("request_message_id")
-  replyMessageId   String?   @map("reply_message_id")
+  conversationId   String    @map("conversation_id")
+  requestMessageId String    @unique(map: "draw_tasks_request_message_id_key") @map("request_message_id")
+  replyMessageId   String    @unique(map: "draw_tasks_reply_message_id_key") @map("reply_message_id")
   prompt           String
   model            String
   size             String
@@ -59,11 +63,14 @@ model DrawTask {
   startedAt        DateTime? @map("started_at")
   finishedAt       DateTime? @map("finished_at")
 
-  assets ImageAsset[]
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  requestMessage Message      @relation("DrawTaskRequestMessage", fields: [requestMessageId], references: [id], onDelete: Cascade)
+  replyMessage   Message      @relation("DrawTaskReplyMessage", fields: [replyMessageId], references: [id], onDelete: Cascade)
+  parentAsset    ImageAsset?  @relation("DrawTaskParentAsset", fields: [parentAssetId], references: [id], onDelete: SetNull)
+  assets         ImageAsset[]
 
   @@index([status, createdAt], map: "idx_draw_tasks_status_created_at")
   @@index([conversationId, createdAt], map: "idx_draw_tasks_conversation_created_at")
-  @@index([replyMessageId], map: "idx_draw_tasks_reply_message_id")
   @@map("draw_tasks")
 }
 
@@ -81,7 +88,9 @@ model ImageAsset {
   task         DrawTask     @relation(fields: [taskId], references: [id], onDelete: Cascade)
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   message      Message      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  childTasks   DrawTask[]   @relation("DrawTaskParentAsset")
 
+  @@index([taskId, sortOrder], map: "idx_image_assets_task_sort_order")
   @@index([messageId, sortOrder], map: "idx_image_assets_message_sort_order")
   @@map("image_assets")
 }

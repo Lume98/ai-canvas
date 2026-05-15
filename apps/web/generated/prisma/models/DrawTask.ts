@@ -279,9 +279,9 @@ export type DrawTaskGroupByArgs<ExtArgs extends runtime.Types.Extensions.Interna
 
 export type DrawTaskGroupByOutputType = {
   id: string
-  conversationId: string | null
-  requestMessageId: string | null
-  replyMessageId: string | null
+  conversationId: string
+  requestMessageId: string
+  replyMessageId: string
   prompt: string
   model: string
   size: string
@@ -325,9 +325,9 @@ export type DrawTaskWhereInput = {
   OR?: Prisma.DrawTaskWhereInput[]
   NOT?: Prisma.DrawTaskWhereInput | Prisma.DrawTaskWhereInput[]
   id?: Prisma.StringFilter<"DrawTask"> | string
-  conversationId?: Prisma.StringNullableFilter<"DrawTask"> | string | null
-  requestMessageId?: Prisma.StringNullableFilter<"DrawTask"> | string | null
-  replyMessageId?: Prisma.StringNullableFilter<"DrawTask"> | string | null
+  conversationId?: Prisma.StringFilter<"DrawTask"> | string
+  requestMessageId?: Prisma.StringFilter<"DrawTask"> | string
+  replyMessageId?: Prisma.StringFilter<"DrawTask"> | string
   prompt?: Prisma.StringFilter<"DrawTask"> | string
   model?: Prisma.StringFilter<"DrawTask"> | string
   size?: Prisma.StringFilter<"DrawTask"> | string
@@ -344,14 +344,18 @@ export type DrawTaskWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"DrawTask"> | Date | string
   startedAt?: Prisma.DateTimeNullableFilter<"DrawTask"> | Date | string | null
   finishedAt?: Prisma.DateTimeNullableFilter<"DrawTask"> | Date | string | null
+  conversation?: Prisma.XOR<Prisma.ConversationScalarRelationFilter, Prisma.ConversationWhereInput>
+  requestMessage?: Prisma.XOR<Prisma.MessageScalarRelationFilter, Prisma.MessageWhereInput>
+  replyMessage?: Prisma.XOR<Prisma.MessageScalarRelationFilter, Prisma.MessageWhereInput>
+  parentAsset?: Prisma.XOR<Prisma.ImageAssetNullableScalarRelationFilter, Prisma.ImageAssetWhereInput> | null
   assets?: Prisma.ImageAssetListRelationFilter
 }
 
 export type DrawTaskOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  conversationId?: Prisma.SortOrderInput | Prisma.SortOrder
-  requestMessageId?: Prisma.SortOrderInput | Prisma.SortOrder
-  replyMessageId?: Prisma.SortOrderInput | Prisma.SortOrder
+  conversationId?: Prisma.SortOrder
+  requestMessageId?: Prisma.SortOrder
+  replyMessageId?: Prisma.SortOrder
   prompt?: Prisma.SortOrder
   model?: Prisma.SortOrder
   size?: Prisma.SortOrder
@@ -368,17 +372,21 @@ export type DrawTaskOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   startedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   finishedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  conversation?: Prisma.ConversationOrderByWithRelationInput
+  requestMessage?: Prisma.MessageOrderByWithRelationInput
+  replyMessage?: Prisma.MessageOrderByWithRelationInput
+  parentAsset?: Prisma.ImageAssetOrderByWithRelationInput
   assets?: Prisma.ImageAssetOrderByRelationAggregateInput
 }
 
 export type DrawTaskWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  requestMessageId?: string
+  replyMessageId?: string
   AND?: Prisma.DrawTaskWhereInput | Prisma.DrawTaskWhereInput[]
   OR?: Prisma.DrawTaskWhereInput[]
   NOT?: Prisma.DrawTaskWhereInput | Prisma.DrawTaskWhereInput[]
-  conversationId?: Prisma.StringNullableFilter<"DrawTask"> | string | null
-  requestMessageId?: Prisma.StringNullableFilter<"DrawTask"> | string | null
-  replyMessageId?: Prisma.StringNullableFilter<"DrawTask"> | string | null
+  conversationId?: Prisma.StringFilter<"DrawTask"> | string
   prompt?: Prisma.StringFilter<"DrawTask"> | string
   model?: Prisma.StringFilter<"DrawTask"> | string
   size?: Prisma.StringFilter<"DrawTask"> | string
@@ -395,14 +403,18 @@ export type DrawTaskWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"DrawTask"> | Date | string
   startedAt?: Prisma.DateTimeNullableFilter<"DrawTask"> | Date | string | null
   finishedAt?: Prisma.DateTimeNullableFilter<"DrawTask"> | Date | string | null
+  conversation?: Prisma.XOR<Prisma.ConversationScalarRelationFilter, Prisma.ConversationWhereInput>
+  requestMessage?: Prisma.XOR<Prisma.MessageScalarRelationFilter, Prisma.MessageWhereInput>
+  replyMessage?: Prisma.XOR<Prisma.MessageScalarRelationFilter, Prisma.MessageWhereInput>
+  parentAsset?: Prisma.XOR<Prisma.ImageAssetNullableScalarRelationFilter, Prisma.ImageAssetWhereInput> | null
   assets?: Prisma.ImageAssetListRelationFilter
-}, "id">
+}, "id" | "requestMessageId" | "replyMessageId">
 
 export type DrawTaskOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  conversationId?: Prisma.SortOrderInput | Prisma.SortOrder
-  requestMessageId?: Prisma.SortOrderInput | Prisma.SortOrder
-  replyMessageId?: Prisma.SortOrderInput | Prisma.SortOrder
+  conversationId?: Prisma.SortOrder
+  requestMessageId?: Prisma.SortOrder
+  replyMessageId?: Prisma.SortOrder
   prompt?: Prisma.SortOrder
   model?: Prisma.SortOrder
   size?: Prisma.SortOrder
@@ -431,9 +443,9 @@ export type DrawTaskScalarWhereWithAggregatesInput = {
   OR?: Prisma.DrawTaskScalarWhereWithAggregatesInput[]
   NOT?: Prisma.DrawTaskScalarWhereWithAggregatesInput | Prisma.DrawTaskScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"DrawTask"> | string
-  conversationId?: Prisma.StringNullableWithAggregatesFilter<"DrawTask"> | string | null
-  requestMessageId?: Prisma.StringNullableWithAggregatesFilter<"DrawTask"> | string | null
-  replyMessageId?: Prisma.StringNullableWithAggregatesFilter<"DrawTask"> | string | null
+  conversationId?: Prisma.StringWithAggregatesFilter<"DrawTask"> | string
+  requestMessageId?: Prisma.StringWithAggregatesFilter<"DrawTask"> | string
+  replyMessageId?: Prisma.StringWithAggregatesFilter<"DrawTask"> | string
   prompt?: Prisma.StringWithAggregatesFilter<"DrawTask"> | string
   model?: Prisma.StringWithAggregatesFilter<"DrawTask"> | string
   size?: Prisma.StringWithAggregatesFilter<"DrawTask"> | string
@@ -454,16 +466,12 @@ export type DrawTaskScalarWhereWithAggregatesInput = {
 
 export type DrawTaskCreateInput = {
   id: string
-  conversationId?: string | null
-  requestMessageId?: string | null
-  replyMessageId?: string | null
   prompt: string
   model: string
   size: string
   quality: string
   outputCount?: number
   branchMode?: string | null
-  parentAssetId?: string | null
   status: string
   progress?: number
   resultFilename?: string | null
@@ -473,14 +481,18 @@ export type DrawTaskCreateInput = {
   updatedAt?: Date | string
   startedAt?: Date | string | null
   finishedAt?: Date | string | null
+  conversation: Prisma.ConversationCreateNestedOneWithoutDrawTasksInput
+  requestMessage: Prisma.MessageCreateNestedOneWithoutRequestedDrawTaskInput
+  replyMessage: Prisma.MessageCreateNestedOneWithoutRepliedDrawTaskInput
+  parentAsset?: Prisma.ImageAssetCreateNestedOneWithoutChildTasksInput
   assets?: Prisma.ImageAssetCreateNestedManyWithoutTaskInput
 }
 
 export type DrawTaskUncheckedCreateInput = {
   id: string
-  conversationId?: string | null
-  requestMessageId?: string | null
-  replyMessageId?: string | null
+  conversationId: string
+  requestMessageId: string
+  replyMessageId: string
   prompt: string
   model: string
   size: string
@@ -502,16 +514,12 @@ export type DrawTaskUncheckedCreateInput = {
 
 export type DrawTaskUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  conversationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  requestMessageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  replyMessageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prompt?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
   size?: Prisma.StringFieldUpdateOperationsInput | string
   quality?: Prisma.StringFieldUpdateOperationsInput | string
   outputCount?: Prisma.IntFieldUpdateOperationsInput | number
   branchMode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  parentAssetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   progress?: Prisma.IntFieldUpdateOperationsInput | number
   resultFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -521,14 +529,18 @@ export type DrawTaskUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  conversation?: Prisma.ConversationUpdateOneRequiredWithoutDrawTasksNestedInput
+  requestMessage?: Prisma.MessageUpdateOneRequiredWithoutRequestedDrawTaskNestedInput
+  replyMessage?: Prisma.MessageUpdateOneRequiredWithoutRepliedDrawTaskNestedInput
+  parentAsset?: Prisma.ImageAssetUpdateOneWithoutChildTasksNestedInput
   assets?: Prisma.ImageAssetUpdateManyWithoutTaskNestedInput
 }
 
 export type DrawTaskUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  conversationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  requestMessageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  replyMessageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  conversationId?: Prisma.StringFieldUpdateOperationsInput | string
+  requestMessageId?: Prisma.StringFieldUpdateOperationsInput | string
+  replyMessageId?: Prisma.StringFieldUpdateOperationsInput | string
   prompt?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
   size?: Prisma.StringFieldUpdateOperationsInput | string
@@ -550,9 +562,9 @@ export type DrawTaskUncheckedUpdateInput = {
 
 export type DrawTaskCreateManyInput = {
   id: string
-  conversationId?: string | null
-  requestMessageId?: string | null
-  replyMessageId?: string | null
+  conversationId: string
+  requestMessageId: string
+  replyMessageId: string
   prompt: string
   model: string
   size: string
@@ -573,9 +585,28 @@ export type DrawTaskCreateManyInput = {
 
 export type DrawTaskUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  conversationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  requestMessageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  replyMessageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prompt?: Prisma.StringFieldUpdateOperationsInput | string
+  model?: Prisma.StringFieldUpdateOperationsInput | string
+  size?: Prisma.StringFieldUpdateOperationsInput | string
+  quality?: Prisma.StringFieldUpdateOperationsInput | string
+  outputCount?: Prisma.IntFieldUpdateOperationsInput | number
+  branchMode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  progress?: Prisma.IntFieldUpdateOperationsInput | number
+  resultFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  attempts?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+}
+
+export type DrawTaskUncheckedUpdateManyInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  conversationId?: Prisma.StringFieldUpdateOperationsInput | string
+  requestMessageId?: Prisma.StringFieldUpdateOperationsInput | string
+  replyMessageId?: Prisma.StringFieldUpdateOperationsInput | string
   prompt?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
   size?: Prisma.StringFieldUpdateOperationsInput | string
@@ -594,27 +625,19 @@ export type DrawTaskUpdateManyMutationInput = {
   finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
-export type DrawTaskUncheckedUpdateManyInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  conversationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  requestMessageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  replyMessageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  prompt?: Prisma.StringFieldUpdateOperationsInput | string
-  model?: Prisma.StringFieldUpdateOperationsInput | string
-  size?: Prisma.StringFieldUpdateOperationsInput | string
-  quality?: Prisma.StringFieldUpdateOperationsInput | string
-  outputCount?: Prisma.IntFieldUpdateOperationsInput | number
-  branchMode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  parentAssetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  progress?: Prisma.IntFieldUpdateOperationsInput | number
-  resultFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  attempts?: Prisma.IntFieldUpdateOperationsInput | number
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+export type DrawTaskListRelationFilter = {
+  every?: Prisma.DrawTaskWhereInput
+  some?: Prisma.DrawTaskWhereInput
+  none?: Prisma.DrawTaskWhereInput
+}
+
+export type DrawTaskOrderByRelationAggregateInput = {
+  _count?: Prisma.SortOrder
+}
+
+export type DrawTaskNullableScalarRelationFilter = {
+  is?: Prisma.DrawTaskWhereInput | null
+  isNot?: Prisma.DrawTaskWhereInput | null
 }
 
 export type DrawTaskCountOrderByAggregateInput = {
@@ -703,6 +726,112 @@ export type DrawTaskScalarRelationFilter = {
   isNot?: Prisma.DrawTaskWhereInput
 }
 
+export type DrawTaskCreateNestedManyWithoutConversationInput = {
+  create?: Prisma.XOR<Prisma.DrawTaskCreateWithoutConversationInput, Prisma.DrawTaskUncheckedCreateWithoutConversationInput> | Prisma.DrawTaskCreateWithoutConversationInput[] | Prisma.DrawTaskUncheckedCreateWithoutConversationInput[]
+  connectOrCreate?: Prisma.DrawTaskCreateOrConnectWithoutConversationInput | Prisma.DrawTaskCreateOrConnectWithoutConversationInput[]
+  createMany?: Prisma.DrawTaskCreateManyConversationInputEnvelope
+  connect?: Prisma.DrawTaskWhereUniqueInput | Prisma.DrawTaskWhereUniqueInput[]
+}
+
+export type DrawTaskUncheckedCreateNestedManyWithoutConversationInput = {
+  create?: Prisma.XOR<Prisma.DrawTaskCreateWithoutConversationInput, Prisma.DrawTaskUncheckedCreateWithoutConversationInput> | Prisma.DrawTaskCreateWithoutConversationInput[] | Prisma.DrawTaskUncheckedCreateWithoutConversationInput[]
+  connectOrCreate?: Prisma.DrawTaskCreateOrConnectWithoutConversationInput | Prisma.DrawTaskCreateOrConnectWithoutConversationInput[]
+  createMany?: Prisma.DrawTaskCreateManyConversationInputEnvelope
+  connect?: Prisma.DrawTaskWhereUniqueInput | Prisma.DrawTaskWhereUniqueInput[]
+}
+
+export type DrawTaskUpdateManyWithoutConversationNestedInput = {
+  create?: Prisma.XOR<Prisma.DrawTaskCreateWithoutConversationInput, Prisma.DrawTaskUncheckedCreateWithoutConversationInput> | Prisma.DrawTaskCreateWithoutConversationInput[] | Prisma.DrawTaskUncheckedCreateWithoutConversationInput[]
+  connectOrCreate?: Prisma.DrawTaskCreateOrConnectWithoutConversationInput | Prisma.DrawTaskCreateOrConnectWithoutConversationInput[]
+  upsert?: Prisma.DrawTaskUpsertWithWhereUniqueWithoutConversationInput | Prisma.DrawTaskUpsertWithWhereUniqueWithoutConversationInput[]
+  createMany?: Prisma.DrawTaskCreateManyConversationInputEnvelope
+  set?: Prisma.DrawTaskWhereUniqueInput | Prisma.DrawTaskWhereUniqueInput[]
+  disconnect?: Prisma.DrawTaskWhereUniqueInput | Prisma.DrawTaskWhereUniqueInput[]
+  delete?: Prisma.DrawTaskWhereUniqueInput | Prisma.DrawTaskWhereUniqueInput[]
+  connect?: Prisma.DrawTaskWhereUniqueInput | Prisma.DrawTaskWhereUniqueInput[]
+  update?: Prisma.DrawTaskUpdateWithWhereUniqueWithoutConversationInput | Prisma.DrawTaskUpdateWithWhereUniqueWithoutConversationInput[]
+  updateMany?: Prisma.DrawTaskUpdateManyWithWhereWithoutConversationInput | Prisma.DrawTaskUpdateManyWithWhereWithoutConversationInput[]
+  deleteMany?: Prisma.DrawTaskScalarWhereInput | Prisma.DrawTaskScalarWhereInput[]
+}
+
+export type DrawTaskUncheckedUpdateManyWithoutConversationNestedInput = {
+  create?: Prisma.XOR<Prisma.DrawTaskCreateWithoutConversationInput, Prisma.DrawTaskUncheckedCreateWithoutConversationInput> | Prisma.DrawTaskCreateWithoutConversationInput[] | Prisma.DrawTaskUncheckedCreateWithoutConversationInput[]
+  connectOrCreate?: Prisma.DrawTaskCreateOrConnectWithoutConversationInput | Prisma.DrawTaskCreateOrConnectWithoutConversationInput[]
+  upsert?: Prisma.DrawTaskUpsertWithWhereUniqueWithoutConversationInput | Prisma.DrawTaskUpsertWithWhereUniqueWithoutConversationInput[]
+  createMany?: Prisma.DrawTaskCreateManyConversationInputEnvelope
+  set?: Prisma.DrawTaskWhereUniqueInput | Prisma.DrawTaskWhereUniqueInput[]
+  disconnect?: Prisma.DrawTaskWhereUniqueInput | Prisma.DrawTaskWhereUniqueInput[]
+  delete?: Prisma.DrawTaskWhereUniqueInput | Prisma.DrawTaskWhereUniqueInput[]
+  connect?: Prisma.DrawTaskWhereUniqueInput | Prisma.DrawTaskWhereUniqueInput[]
+  update?: Prisma.DrawTaskUpdateWithWhereUniqueWithoutConversationInput | Prisma.DrawTaskUpdateWithWhereUniqueWithoutConversationInput[]
+  updateMany?: Prisma.DrawTaskUpdateManyWithWhereWithoutConversationInput | Prisma.DrawTaskUpdateManyWithWhereWithoutConversationInput[]
+  deleteMany?: Prisma.DrawTaskScalarWhereInput | Prisma.DrawTaskScalarWhereInput[]
+}
+
+export type DrawTaskCreateNestedOneWithoutRequestMessageInput = {
+  create?: Prisma.XOR<Prisma.DrawTaskCreateWithoutRequestMessageInput, Prisma.DrawTaskUncheckedCreateWithoutRequestMessageInput>
+  connectOrCreate?: Prisma.DrawTaskCreateOrConnectWithoutRequestMessageInput
+  connect?: Prisma.DrawTaskWhereUniqueInput
+}
+
+export type DrawTaskCreateNestedOneWithoutReplyMessageInput = {
+  create?: Prisma.XOR<Prisma.DrawTaskCreateWithoutReplyMessageInput, Prisma.DrawTaskUncheckedCreateWithoutReplyMessageInput>
+  connectOrCreate?: Prisma.DrawTaskCreateOrConnectWithoutReplyMessageInput
+  connect?: Prisma.DrawTaskWhereUniqueInput
+}
+
+export type DrawTaskUncheckedCreateNestedOneWithoutRequestMessageInput = {
+  create?: Prisma.XOR<Prisma.DrawTaskCreateWithoutRequestMessageInput, Prisma.DrawTaskUncheckedCreateWithoutRequestMessageInput>
+  connectOrCreate?: Prisma.DrawTaskCreateOrConnectWithoutRequestMessageInput
+  connect?: Prisma.DrawTaskWhereUniqueInput
+}
+
+export type DrawTaskUncheckedCreateNestedOneWithoutReplyMessageInput = {
+  create?: Prisma.XOR<Prisma.DrawTaskCreateWithoutReplyMessageInput, Prisma.DrawTaskUncheckedCreateWithoutReplyMessageInput>
+  connectOrCreate?: Prisma.DrawTaskCreateOrConnectWithoutReplyMessageInput
+  connect?: Prisma.DrawTaskWhereUniqueInput
+}
+
+export type DrawTaskUpdateOneWithoutRequestMessageNestedInput = {
+  create?: Prisma.XOR<Prisma.DrawTaskCreateWithoutRequestMessageInput, Prisma.DrawTaskUncheckedCreateWithoutRequestMessageInput>
+  connectOrCreate?: Prisma.DrawTaskCreateOrConnectWithoutRequestMessageInput
+  upsert?: Prisma.DrawTaskUpsertWithoutRequestMessageInput
+  disconnect?: Prisma.DrawTaskWhereInput | boolean
+  delete?: Prisma.DrawTaskWhereInput | boolean
+  connect?: Prisma.DrawTaskWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DrawTaskUpdateToOneWithWhereWithoutRequestMessageInput, Prisma.DrawTaskUpdateWithoutRequestMessageInput>, Prisma.DrawTaskUncheckedUpdateWithoutRequestMessageInput>
+}
+
+export type DrawTaskUpdateOneWithoutReplyMessageNestedInput = {
+  create?: Prisma.XOR<Prisma.DrawTaskCreateWithoutReplyMessageInput, Prisma.DrawTaskUncheckedCreateWithoutReplyMessageInput>
+  connectOrCreate?: Prisma.DrawTaskCreateOrConnectWithoutReplyMessageInput
+  upsert?: Prisma.DrawTaskUpsertWithoutReplyMessageInput
+  disconnect?: Prisma.DrawTaskWhereInput | boolean
+  delete?: Prisma.DrawTaskWhereInput | boolean
+  connect?: Prisma.DrawTaskWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DrawTaskUpdateToOneWithWhereWithoutReplyMessageInput, Prisma.DrawTaskUpdateWithoutReplyMessageInput>, Prisma.DrawTaskUncheckedUpdateWithoutReplyMessageInput>
+}
+
+export type DrawTaskUncheckedUpdateOneWithoutRequestMessageNestedInput = {
+  create?: Prisma.XOR<Prisma.DrawTaskCreateWithoutRequestMessageInput, Prisma.DrawTaskUncheckedCreateWithoutRequestMessageInput>
+  connectOrCreate?: Prisma.DrawTaskCreateOrConnectWithoutRequestMessageInput
+  upsert?: Prisma.DrawTaskUpsertWithoutRequestMessageInput
+  disconnect?: Prisma.DrawTaskWhereInput | boolean
+  delete?: Prisma.DrawTaskWhereInput | boolean
+  connect?: Prisma.DrawTaskWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DrawTaskUpdateToOneWithWhereWithoutRequestMessageInput, Prisma.DrawTaskUpdateWithoutRequestMessageInput>, Prisma.DrawTaskUncheckedUpdateWithoutRequestMessageInput>
+}
+
+export type DrawTaskUncheckedUpdateOneWithoutReplyMessageNestedInput = {
+  create?: Prisma.XOR<Prisma.DrawTaskCreateWithoutReplyMessageInput, Prisma.DrawTaskUncheckedCreateWithoutReplyMessageInput>
+  connectOrCreate?: Prisma.DrawTaskCreateOrConnectWithoutReplyMessageInput
+  upsert?: Prisma.DrawTaskUpsertWithoutReplyMessageInput
+  disconnect?: Prisma.DrawTaskWhereInput | boolean
+  delete?: Prisma.DrawTaskWhereInput | boolean
+  connect?: Prisma.DrawTaskWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DrawTaskUpdateToOneWithWhereWithoutReplyMessageInput, Prisma.DrawTaskUpdateWithoutReplyMessageInput>, Prisma.DrawTaskUncheckedUpdateWithoutReplyMessageInput>
+}
+
 export type NullableDateTimeFieldUpdateOperationsInput = {
   set?: Date | string | null
 }
@@ -713,6 +842,20 @@ export type DrawTaskCreateNestedOneWithoutAssetsInput = {
   connect?: Prisma.DrawTaskWhereUniqueInput
 }
 
+export type DrawTaskCreateNestedManyWithoutParentAssetInput = {
+  create?: Prisma.XOR<Prisma.DrawTaskCreateWithoutParentAssetInput, Prisma.DrawTaskUncheckedCreateWithoutParentAssetInput> | Prisma.DrawTaskCreateWithoutParentAssetInput[] | Prisma.DrawTaskUncheckedCreateWithoutParentAssetInput[]
+  connectOrCreate?: Prisma.DrawTaskCreateOrConnectWithoutParentAssetInput | Prisma.DrawTaskCreateOrConnectWithoutParentAssetInput[]
+  createMany?: Prisma.DrawTaskCreateManyParentAssetInputEnvelope
+  connect?: Prisma.DrawTaskWhereUniqueInput | Prisma.DrawTaskWhereUniqueInput[]
+}
+
+export type DrawTaskUncheckedCreateNestedManyWithoutParentAssetInput = {
+  create?: Prisma.XOR<Prisma.DrawTaskCreateWithoutParentAssetInput, Prisma.DrawTaskUncheckedCreateWithoutParentAssetInput> | Prisma.DrawTaskCreateWithoutParentAssetInput[] | Prisma.DrawTaskUncheckedCreateWithoutParentAssetInput[]
+  connectOrCreate?: Prisma.DrawTaskCreateOrConnectWithoutParentAssetInput | Prisma.DrawTaskCreateOrConnectWithoutParentAssetInput[]
+  createMany?: Prisma.DrawTaskCreateManyParentAssetInputEnvelope
+  connect?: Prisma.DrawTaskWhereUniqueInput | Prisma.DrawTaskWhereUniqueInput[]
+}
+
 export type DrawTaskUpdateOneRequiredWithoutAssetsNestedInput = {
   create?: Prisma.XOR<Prisma.DrawTaskCreateWithoutAssetsInput, Prisma.DrawTaskUncheckedCreateWithoutAssetsInput>
   connectOrCreate?: Prisma.DrawTaskCreateOrConnectWithoutAssetsInput
@@ -721,11 +864,61 @@ export type DrawTaskUpdateOneRequiredWithoutAssetsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.DrawTaskUpdateToOneWithWhereWithoutAssetsInput, Prisma.DrawTaskUpdateWithoutAssetsInput>, Prisma.DrawTaskUncheckedUpdateWithoutAssetsInput>
 }
 
-export type DrawTaskCreateWithoutAssetsInput = {
+export type DrawTaskUpdateManyWithoutParentAssetNestedInput = {
+  create?: Prisma.XOR<Prisma.DrawTaskCreateWithoutParentAssetInput, Prisma.DrawTaskUncheckedCreateWithoutParentAssetInput> | Prisma.DrawTaskCreateWithoutParentAssetInput[] | Prisma.DrawTaskUncheckedCreateWithoutParentAssetInput[]
+  connectOrCreate?: Prisma.DrawTaskCreateOrConnectWithoutParentAssetInput | Prisma.DrawTaskCreateOrConnectWithoutParentAssetInput[]
+  upsert?: Prisma.DrawTaskUpsertWithWhereUniqueWithoutParentAssetInput | Prisma.DrawTaskUpsertWithWhereUniqueWithoutParentAssetInput[]
+  createMany?: Prisma.DrawTaskCreateManyParentAssetInputEnvelope
+  set?: Prisma.DrawTaskWhereUniqueInput | Prisma.DrawTaskWhereUniqueInput[]
+  disconnect?: Prisma.DrawTaskWhereUniqueInput | Prisma.DrawTaskWhereUniqueInput[]
+  delete?: Prisma.DrawTaskWhereUniqueInput | Prisma.DrawTaskWhereUniqueInput[]
+  connect?: Prisma.DrawTaskWhereUniqueInput | Prisma.DrawTaskWhereUniqueInput[]
+  update?: Prisma.DrawTaskUpdateWithWhereUniqueWithoutParentAssetInput | Prisma.DrawTaskUpdateWithWhereUniqueWithoutParentAssetInput[]
+  updateMany?: Prisma.DrawTaskUpdateManyWithWhereWithoutParentAssetInput | Prisma.DrawTaskUpdateManyWithWhereWithoutParentAssetInput[]
+  deleteMany?: Prisma.DrawTaskScalarWhereInput | Prisma.DrawTaskScalarWhereInput[]
+}
+
+export type DrawTaskUncheckedUpdateManyWithoutParentAssetNestedInput = {
+  create?: Prisma.XOR<Prisma.DrawTaskCreateWithoutParentAssetInput, Prisma.DrawTaskUncheckedCreateWithoutParentAssetInput> | Prisma.DrawTaskCreateWithoutParentAssetInput[] | Prisma.DrawTaskUncheckedCreateWithoutParentAssetInput[]
+  connectOrCreate?: Prisma.DrawTaskCreateOrConnectWithoutParentAssetInput | Prisma.DrawTaskCreateOrConnectWithoutParentAssetInput[]
+  upsert?: Prisma.DrawTaskUpsertWithWhereUniqueWithoutParentAssetInput | Prisma.DrawTaskUpsertWithWhereUniqueWithoutParentAssetInput[]
+  createMany?: Prisma.DrawTaskCreateManyParentAssetInputEnvelope
+  set?: Prisma.DrawTaskWhereUniqueInput | Prisma.DrawTaskWhereUniqueInput[]
+  disconnect?: Prisma.DrawTaskWhereUniqueInput | Prisma.DrawTaskWhereUniqueInput[]
+  delete?: Prisma.DrawTaskWhereUniqueInput | Prisma.DrawTaskWhereUniqueInput[]
+  connect?: Prisma.DrawTaskWhereUniqueInput | Prisma.DrawTaskWhereUniqueInput[]
+  update?: Prisma.DrawTaskUpdateWithWhereUniqueWithoutParentAssetInput | Prisma.DrawTaskUpdateWithWhereUniqueWithoutParentAssetInput[]
+  updateMany?: Prisma.DrawTaskUpdateManyWithWhereWithoutParentAssetInput | Prisma.DrawTaskUpdateManyWithWhereWithoutParentAssetInput[]
+  deleteMany?: Prisma.DrawTaskScalarWhereInput | Prisma.DrawTaskScalarWhereInput[]
+}
+
+export type DrawTaskCreateWithoutConversationInput = {
   id: string
-  conversationId?: string | null
-  requestMessageId?: string | null
-  replyMessageId?: string | null
+  prompt: string
+  model: string
+  size: string
+  quality: string
+  outputCount?: number
+  branchMode?: string | null
+  status: string
+  progress?: number
+  resultFilename?: string | null
+  errorMessage?: string | null
+  attempts?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  startedAt?: Date | string | null
+  finishedAt?: Date | string | null
+  requestMessage: Prisma.MessageCreateNestedOneWithoutRequestedDrawTaskInput
+  replyMessage: Prisma.MessageCreateNestedOneWithoutRepliedDrawTaskInput
+  parentAsset?: Prisma.ImageAssetCreateNestedOneWithoutChildTasksInput
+  assets?: Prisma.ImageAssetCreateNestedManyWithoutTaskInput
+}
+
+export type DrawTaskUncheckedCreateWithoutConversationInput = {
+  id: string
+  requestMessageId: string
+  replyMessageId: string
   prompt: string
   model: string
   size: string
@@ -742,13 +935,304 @@ export type DrawTaskCreateWithoutAssetsInput = {
   updatedAt?: Date | string
   startedAt?: Date | string | null
   finishedAt?: Date | string | null
+  assets?: Prisma.ImageAssetUncheckedCreateNestedManyWithoutTaskInput
+}
+
+export type DrawTaskCreateOrConnectWithoutConversationInput = {
+  where: Prisma.DrawTaskWhereUniqueInput
+  create: Prisma.XOR<Prisma.DrawTaskCreateWithoutConversationInput, Prisma.DrawTaskUncheckedCreateWithoutConversationInput>
+}
+
+export type DrawTaskCreateManyConversationInputEnvelope = {
+  data: Prisma.DrawTaskCreateManyConversationInput | Prisma.DrawTaskCreateManyConversationInput[]
+}
+
+export type DrawTaskUpsertWithWhereUniqueWithoutConversationInput = {
+  where: Prisma.DrawTaskWhereUniqueInput
+  update: Prisma.XOR<Prisma.DrawTaskUpdateWithoutConversationInput, Prisma.DrawTaskUncheckedUpdateWithoutConversationInput>
+  create: Prisma.XOR<Prisma.DrawTaskCreateWithoutConversationInput, Prisma.DrawTaskUncheckedCreateWithoutConversationInput>
+}
+
+export type DrawTaskUpdateWithWhereUniqueWithoutConversationInput = {
+  where: Prisma.DrawTaskWhereUniqueInput
+  data: Prisma.XOR<Prisma.DrawTaskUpdateWithoutConversationInput, Prisma.DrawTaskUncheckedUpdateWithoutConversationInput>
+}
+
+export type DrawTaskUpdateManyWithWhereWithoutConversationInput = {
+  where: Prisma.DrawTaskScalarWhereInput
+  data: Prisma.XOR<Prisma.DrawTaskUpdateManyMutationInput, Prisma.DrawTaskUncheckedUpdateManyWithoutConversationInput>
+}
+
+export type DrawTaskScalarWhereInput = {
+  AND?: Prisma.DrawTaskScalarWhereInput | Prisma.DrawTaskScalarWhereInput[]
+  OR?: Prisma.DrawTaskScalarWhereInput[]
+  NOT?: Prisma.DrawTaskScalarWhereInput | Prisma.DrawTaskScalarWhereInput[]
+  id?: Prisma.StringFilter<"DrawTask"> | string
+  conversationId?: Prisma.StringFilter<"DrawTask"> | string
+  requestMessageId?: Prisma.StringFilter<"DrawTask"> | string
+  replyMessageId?: Prisma.StringFilter<"DrawTask"> | string
+  prompt?: Prisma.StringFilter<"DrawTask"> | string
+  model?: Prisma.StringFilter<"DrawTask"> | string
+  size?: Prisma.StringFilter<"DrawTask"> | string
+  quality?: Prisma.StringFilter<"DrawTask"> | string
+  outputCount?: Prisma.IntFilter<"DrawTask"> | number
+  branchMode?: Prisma.StringNullableFilter<"DrawTask"> | string | null
+  parentAssetId?: Prisma.StringNullableFilter<"DrawTask"> | string | null
+  status?: Prisma.StringFilter<"DrawTask"> | string
+  progress?: Prisma.IntFilter<"DrawTask"> | number
+  resultFilename?: Prisma.StringNullableFilter<"DrawTask"> | string | null
+  errorMessage?: Prisma.StringNullableFilter<"DrawTask"> | string | null
+  attempts?: Prisma.IntFilter<"DrawTask"> | number
+  createdAt?: Prisma.DateTimeFilter<"DrawTask"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"DrawTask"> | Date | string
+  startedAt?: Prisma.DateTimeNullableFilter<"DrawTask"> | Date | string | null
+  finishedAt?: Prisma.DateTimeNullableFilter<"DrawTask"> | Date | string | null
+}
+
+export type DrawTaskCreateWithoutRequestMessageInput = {
+  id: string
+  prompt: string
+  model: string
+  size: string
+  quality: string
+  outputCount?: number
+  branchMode?: string | null
+  status: string
+  progress?: number
+  resultFilename?: string | null
+  errorMessage?: string | null
+  attempts?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  startedAt?: Date | string | null
+  finishedAt?: Date | string | null
+  conversation: Prisma.ConversationCreateNestedOneWithoutDrawTasksInput
+  replyMessage: Prisma.MessageCreateNestedOneWithoutRepliedDrawTaskInput
+  parentAsset?: Prisma.ImageAssetCreateNestedOneWithoutChildTasksInput
+  assets?: Prisma.ImageAssetCreateNestedManyWithoutTaskInput
+}
+
+export type DrawTaskUncheckedCreateWithoutRequestMessageInput = {
+  id: string
+  conversationId: string
+  replyMessageId: string
+  prompt: string
+  model: string
+  size: string
+  quality: string
+  outputCount?: number
+  branchMode?: string | null
+  parentAssetId?: string | null
+  status: string
+  progress?: number
+  resultFilename?: string | null
+  errorMessage?: string | null
+  attempts?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  startedAt?: Date | string | null
+  finishedAt?: Date | string | null
+  assets?: Prisma.ImageAssetUncheckedCreateNestedManyWithoutTaskInput
+}
+
+export type DrawTaskCreateOrConnectWithoutRequestMessageInput = {
+  where: Prisma.DrawTaskWhereUniqueInput
+  create: Prisma.XOR<Prisma.DrawTaskCreateWithoutRequestMessageInput, Prisma.DrawTaskUncheckedCreateWithoutRequestMessageInput>
+}
+
+export type DrawTaskCreateWithoutReplyMessageInput = {
+  id: string
+  prompt: string
+  model: string
+  size: string
+  quality: string
+  outputCount?: number
+  branchMode?: string | null
+  status: string
+  progress?: number
+  resultFilename?: string | null
+  errorMessage?: string | null
+  attempts?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  startedAt?: Date | string | null
+  finishedAt?: Date | string | null
+  conversation: Prisma.ConversationCreateNestedOneWithoutDrawTasksInput
+  requestMessage: Prisma.MessageCreateNestedOneWithoutRequestedDrawTaskInput
+  parentAsset?: Prisma.ImageAssetCreateNestedOneWithoutChildTasksInput
+  assets?: Prisma.ImageAssetCreateNestedManyWithoutTaskInput
+}
+
+export type DrawTaskUncheckedCreateWithoutReplyMessageInput = {
+  id: string
+  conversationId: string
+  requestMessageId: string
+  prompt: string
+  model: string
+  size: string
+  quality: string
+  outputCount?: number
+  branchMode?: string | null
+  parentAssetId?: string | null
+  status: string
+  progress?: number
+  resultFilename?: string | null
+  errorMessage?: string | null
+  attempts?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  startedAt?: Date | string | null
+  finishedAt?: Date | string | null
+  assets?: Prisma.ImageAssetUncheckedCreateNestedManyWithoutTaskInput
+}
+
+export type DrawTaskCreateOrConnectWithoutReplyMessageInput = {
+  where: Prisma.DrawTaskWhereUniqueInput
+  create: Prisma.XOR<Prisma.DrawTaskCreateWithoutReplyMessageInput, Prisma.DrawTaskUncheckedCreateWithoutReplyMessageInput>
+}
+
+export type DrawTaskUpsertWithoutRequestMessageInput = {
+  update: Prisma.XOR<Prisma.DrawTaskUpdateWithoutRequestMessageInput, Prisma.DrawTaskUncheckedUpdateWithoutRequestMessageInput>
+  create: Prisma.XOR<Prisma.DrawTaskCreateWithoutRequestMessageInput, Prisma.DrawTaskUncheckedCreateWithoutRequestMessageInput>
+  where?: Prisma.DrawTaskWhereInput
+}
+
+export type DrawTaskUpdateToOneWithWhereWithoutRequestMessageInput = {
+  where?: Prisma.DrawTaskWhereInput
+  data: Prisma.XOR<Prisma.DrawTaskUpdateWithoutRequestMessageInput, Prisma.DrawTaskUncheckedUpdateWithoutRequestMessageInput>
+}
+
+export type DrawTaskUpdateWithoutRequestMessageInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  prompt?: Prisma.StringFieldUpdateOperationsInput | string
+  model?: Prisma.StringFieldUpdateOperationsInput | string
+  size?: Prisma.StringFieldUpdateOperationsInput | string
+  quality?: Prisma.StringFieldUpdateOperationsInput | string
+  outputCount?: Prisma.IntFieldUpdateOperationsInput | number
+  branchMode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  progress?: Prisma.IntFieldUpdateOperationsInput | number
+  resultFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  attempts?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  conversation?: Prisma.ConversationUpdateOneRequiredWithoutDrawTasksNestedInput
+  replyMessage?: Prisma.MessageUpdateOneRequiredWithoutRepliedDrawTaskNestedInput
+  parentAsset?: Prisma.ImageAssetUpdateOneWithoutChildTasksNestedInput
+  assets?: Prisma.ImageAssetUpdateManyWithoutTaskNestedInput
+}
+
+export type DrawTaskUncheckedUpdateWithoutRequestMessageInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  conversationId?: Prisma.StringFieldUpdateOperationsInput | string
+  replyMessageId?: Prisma.StringFieldUpdateOperationsInput | string
+  prompt?: Prisma.StringFieldUpdateOperationsInput | string
+  model?: Prisma.StringFieldUpdateOperationsInput | string
+  size?: Prisma.StringFieldUpdateOperationsInput | string
+  quality?: Prisma.StringFieldUpdateOperationsInput | string
+  outputCount?: Prisma.IntFieldUpdateOperationsInput | number
+  branchMode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  parentAssetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  progress?: Prisma.IntFieldUpdateOperationsInput | number
+  resultFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  attempts?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  assets?: Prisma.ImageAssetUncheckedUpdateManyWithoutTaskNestedInput
+}
+
+export type DrawTaskUpsertWithoutReplyMessageInput = {
+  update: Prisma.XOR<Prisma.DrawTaskUpdateWithoutReplyMessageInput, Prisma.DrawTaskUncheckedUpdateWithoutReplyMessageInput>
+  create: Prisma.XOR<Prisma.DrawTaskCreateWithoutReplyMessageInput, Prisma.DrawTaskUncheckedCreateWithoutReplyMessageInput>
+  where?: Prisma.DrawTaskWhereInput
+}
+
+export type DrawTaskUpdateToOneWithWhereWithoutReplyMessageInput = {
+  where?: Prisma.DrawTaskWhereInput
+  data: Prisma.XOR<Prisma.DrawTaskUpdateWithoutReplyMessageInput, Prisma.DrawTaskUncheckedUpdateWithoutReplyMessageInput>
+}
+
+export type DrawTaskUpdateWithoutReplyMessageInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  prompt?: Prisma.StringFieldUpdateOperationsInput | string
+  model?: Prisma.StringFieldUpdateOperationsInput | string
+  size?: Prisma.StringFieldUpdateOperationsInput | string
+  quality?: Prisma.StringFieldUpdateOperationsInput | string
+  outputCount?: Prisma.IntFieldUpdateOperationsInput | number
+  branchMode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  progress?: Prisma.IntFieldUpdateOperationsInput | number
+  resultFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  attempts?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  conversation?: Prisma.ConversationUpdateOneRequiredWithoutDrawTasksNestedInput
+  requestMessage?: Prisma.MessageUpdateOneRequiredWithoutRequestedDrawTaskNestedInput
+  parentAsset?: Prisma.ImageAssetUpdateOneWithoutChildTasksNestedInput
+  assets?: Prisma.ImageAssetUpdateManyWithoutTaskNestedInput
+}
+
+export type DrawTaskUncheckedUpdateWithoutReplyMessageInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  conversationId?: Prisma.StringFieldUpdateOperationsInput | string
+  requestMessageId?: Prisma.StringFieldUpdateOperationsInput | string
+  prompt?: Prisma.StringFieldUpdateOperationsInput | string
+  model?: Prisma.StringFieldUpdateOperationsInput | string
+  size?: Prisma.StringFieldUpdateOperationsInput | string
+  quality?: Prisma.StringFieldUpdateOperationsInput | string
+  outputCount?: Prisma.IntFieldUpdateOperationsInput | number
+  branchMode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  parentAssetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  progress?: Prisma.IntFieldUpdateOperationsInput | number
+  resultFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  attempts?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  assets?: Prisma.ImageAssetUncheckedUpdateManyWithoutTaskNestedInput
+}
+
+export type DrawTaskCreateWithoutAssetsInput = {
+  id: string
+  prompt: string
+  model: string
+  size: string
+  quality: string
+  outputCount?: number
+  branchMode?: string | null
+  status: string
+  progress?: number
+  resultFilename?: string | null
+  errorMessage?: string | null
+  attempts?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  startedAt?: Date | string | null
+  finishedAt?: Date | string | null
+  conversation: Prisma.ConversationCreateNestedOneWithoutDrawTasksInput
+  requestMessage: Prisma.MessageCreateNestedOneWithoutRequestedDrawTaskInput
+  replyMessage: Prisma.MessageCreateNestedOneWithoutRepliedDrawTaskInput
+  parentAsset?: Prisma.ImageAssetCreateNestedOneWithoutChildTasksInput
 }
 
 export type DrawTaskUncheckedCreateWithoutAssetsInput = {
   id: string
-  conversationId?: string | null
-  requestMessageId?: string | null
-  replyMessageId?: string | null
+  conversationId: string
+  requestMessageId: string
+  replyMessageId: string
   prompt: string
   model: string
   size: string
@@ -772,6 +1256,61 @@ export type DrawTaskCreateOrConnectWithoutAssetsInput = {
   create: Prisma.XOR<Prisma.DrawTaskCreateWithoutAssetsInput, Prisma.DrawTaskUncheckedCreateWithoutAssetsInput>
 }
 
+export type DrawTaskCreateWithoutParentAssetInput = {
+  id: string
+  prompt: string
+  model: string
+  size: string
+  quality: string
+  outputCount?: number
+  branchMode?: string | null
+  status: string
+  progress?: number
+  resultFilename?: string | null
+  errorMessage?: string | null
+  attempts?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  startedAt?: Date | string | null
+  finishedAt?: Date | string | null
+  conversation: Prisma.ConversationCreateNestedOneWithoutDrawTasksInput
+  requestMessage: Prisma.MessageCreateNestedOneWithoutRequestedDrawTaskInput
+  replyMessage: Prisma.MessageCreateNestedOneWithoutRepliedDrawTaskInput
+  assets?: Prisma.ImageAssetCreateNestedManyWithoutTaskInput
+}
+
+export type DrawTaskUncheckedCreateWithoutParentAssetInput = {
+  id: string
+  conversationId: string
+  requestMessageId: string
+  replyMessageId: string
+  prompt: string
+  model: string
+  size: string
+  quality: string
+  outputCount?: number
+  branchMode?: string | null
+  status: string
+  progress?: number
+  resultFilename?: string | null
+  errorMessage?: string | null
+  attempts?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  startedAt?: Date | string | null
+  finishedAt?: Date | string | null
+  assets?: Prisma.ImageAssetUncheckedCreateNestedManyWithoutTaskInput
+}
+
+export type DrawTaskCreateOrConnectWithoutParentAssetInput = {
+  where: Prisma.DrawTaskWhereUniqueInput
+  create: Prisma.XOR<Prisma.DrawTaskCreateWithoutParentAssetInput, Prisma.DrawTaskUncheckedCreateWithoutParentAssetInput>
+}
+
+export type DrawTaskCreateManyParentAssetInputEnvelope = {
+  data: Prisma.DrawTaskCreateManyParentAssetInput | Prisma.DrawTaskCreateManyParentAssetInput[]
+}
+
 export type DrawTaskUpsertWithoutAssetsInput = {
   update: Prisma.XOR<Prisma.DrawTaskUpdateWithoutAssetsInput, Prisma.DrawTaskUncheckedUpdateWithoutAssetsInput>
   create: Prisma.XOR<Prisma.DrawTaskCreateWithoutAssetsInput, Prisma.DrawTaskUncheckedCreateWithoutAssetsInput>
@@ -785,9 +1324,32 @@ export type DrawTaskUpdateToOneWithWhereWithoutAssetsInput = {
 
 export type DrawTaskUpdateWithoutAssetsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  conversationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  requestMessageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  replyMessageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prompt?: Prisma.StringFieldUpdateOperationsInput | string
+  model?: Prisma.StringFieldUpdateOperationsInput | string
+  size?: Prisma.StringFieldUpdateOperationsInput | string
+  quality?: Prisma.StringFieldUpdateOperationsInput | string
+  outputCount?: Prisma.IntFieldUpdateOperationsInput | number
+  branchMode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  progress?: Prisma.IntFieldUpdateOperationsInput | number
+  resultFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  attempts?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  conversation?: Prisma.ConversationUpdateOneRequiredWithoutDrawTasksNestedInput
+  requestMessage?: Prisma.MessageUpdateOneRequiredWithoutRequestedDrawTaskNestedInput
+  replyMessage?: Prisma.MessageUpdateOneRequiredWithoutRepliedDrawTaskNestedInput
+  parentAsset?: Prisma.ImageAssetUpdateOneWithoutChildTasksNestedInput
+}
+
+export type DrawTaskUncheckedUpdateWithoutAssetsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  conversationId?: Prisma.StringFieldUpdateOperationsInput | string
+  requestMessageId?: Prisma.StringFieldUpdateOperationsInput | string
+  replyMessageId?: Prisma.StringFieldUpdateOperationsInput | string
   prompt?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
   size?: Prisma.StringFieldUpdateOperationsInput | string
@@ -806,11 +1368,71 @@ export type DrawTaskUpdateWithoutAssetsInput = {
   finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
-export type DrawTaskUncheckedUpdateWithoutAssetsInput = {
+export type DrawTaskUpsertWithWhereUniqueWithoutParentAssetInput = {
+  where: Prisma.DrawTaskWhereUniqueInput
+  update: Prisma.XOR<Prisma.DrawTaskUpdateWithoutParentAssetInput, Prisma.DrawTaskUncheckedUpdateWithoutParentAssetInput>
+  create: Prisma.XOR<Prisma.DrawTaskCreateWithoutParentAssetInput, Prisma.DrawTaskUncheckedCreateWithoutParentAssetInput>
+}
+
+export type DrawTaskUpdateWithWhereUniqueWithoutParentAssetInput = {
+  where: Prisma.DrawTaskWhereUniqueInput
+  data: Prisma.XOR<Prisma.DrawTaskUpdateWithoutParentAssetInput, Prisma.DrawTaskUncheckedUpdateWithoutParentAssetInput>
+}
+
+export type DrawTaskUpdateManyWithWhereWithoutParentAssetInput = {
+  where: Prisma.DrawTaskScalarWhereInput
+  data: Prisma.XOR<Prisma.DrawTaskUpdateManyMutationInput, Prisma.DrawTaskUncheckedUpdateManyWithoutParentAssetInput>
+}
+
+export type DrawTaskCreateManyConversationInput = {
+  id: string
+  requestMessageId: string
+  replyMessageId: string
+  prompt: string
+  model: string
+  size: string
+  quality: string
+  outputCount?: number
+  branchMode?: string | null
+  parentAssetId?: string | null
+  status: string
+  progress?: number
+  resultFilename?: string | null
+  errorMessage?: string | null
+  attempts?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  startedAt?: Date | string | null
+  finishedAt?: Date | string | null
+}
+
+export type DrawTaskUpdateWithoutConversationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  conversationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  requestMessageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  replyMessageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prompt?: Prisma.StringFieldUpdateOperationsInput | string
+  model?: Prisma.StringFieldUpdateOperationsInput | string
+  size?: Prisma.StringFieldUpdateOperationsInput | string
+  quality?: Prisma.StringFieldUpdateOperationsInput | string
+  outputCount?: Prisma.IntFieldUpdateOperationsInput | number
+  branchMode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  progress?: Prisma.IntFieldUpdateOperationsInput | number
+  resultFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  attempts?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  requestMessage?: Prisma.MessageUpdateOneRequiredWithoutRequestedDrawTaskNestedInput
+  replyMessage?: Prisma.MessageUpdateOneRequiredWithoutRepliedDrawTaskNestedInput
+  parentAsset?: Prisma.ImageAssetUpdateOneWithoutChildTasksNestedInput
+  assets?: Prisma.ImageAssetUpdateManyWithoutTaskNestedInput
+}
+
+export type DrawTaskUncheckedUpdateWithoutConversationInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  requestMessageId?: Prisma.StringFieldUpdateOperationsInput | string
+  replyMessageId?: Prisma.StringFieldUpdateOperationsInput | string
   prompt?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
   size?: Prisma.StringFieldUpdateOperationsInput | string
@@ -818,6 +1440,119 @@ export type DrawTaskUncheckedUpdateWithoutAssetsInput = {
   outputCount?: Prisma.IntFieldUpdateOperationsInput | number
   branchMode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   parentAssetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  progress?: Prisma.IntFieldUpdateOperationsInput | number
+  resultFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  attempts?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  assets?: Prisma.ImageAssetUncheckedUpdateManyWithoutTaskNestedInput
+}
+
+export type DrawTaskUncheckedUpdateManyWithoutConversationInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  requestMessageId?: Prisma.StringFieldUpdateOperationsInput | string
+  replyMessageId?: Prisma.StringFieldUpdateOperationsInput | string
+  prompt?: Prisma.StringFieldUpdateOperationsInput | string
+  model?: Prisma.StringFieldUpdateOperationsInput | string
+  size?: Prisma.StringFieldUpdateOperationsInput | string
+  quality?: Prisma.StringFieldUpdateOperationsInput | string
+  outputCount?: Prisma.IntFieldUpdateOperationsInput | number
+  branchMode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  parentAssetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  progress?: Prisma.IntFieldUpdateOperationsInput | number
+  resultFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  attempts?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+}
+
+export type DrawTaskCreateManyParentAssetInput = {
+  id: string
+  conversationId: string
+  requestMessageId: string
+  replyMessageId: string
+  prompt: string
+  model: string
+  size: string
+  quality: string
+  outputCount?: number
+  branchMode?: string | null
+  status: string
+  progress?: number
+  resultFilename?: string | null
+  errorMessage?: string | null
+  attempts?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  startedAt?: Date | string | null
+  finishedAt?: Date | string | null
+}
+
+export type DrawTaskUpdateWithoutParentAssetInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  prompt?: Prisma.StringFieldUpdateOperationsInput | string
+  model?: Prisma.StringFieldUpdateOperationsInput | string
+  size?: Prisma.StringFieldUpdateOperationsInput | string
+  quality?: Prisma.StringFieldUpdateOperationsInput | string
+  outputCount?: Prisma.IntFieldUpdateOperationsInput | number
+  branchMode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  progress?: Prisma.IntFieldUpdateOperationsInput | number
+  resultFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  attempts?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  conversation?: Prisma.ConversationUpdateOneRequiredWithoutDrawTasksNestedInput
+  requestMessage?: Prisma.MessageUpdateOneRequiredWithoutRequestedDrawTaskNestedInput
+  replyMessage?: Prisma.MessageUpdateOneRequiredWithoutRepliedDrawTaskNestedInput
+  assets?: Prisma.ImageAssetUpdateManyWithoutTaskNestedInput
+}
+
+export type DrawTaskUncheckedUpdateWithoutParentAssetInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  conversationId?: Prisma.StringFieldUpdateOperationsInput | string
+  requestMessageId?: Prisma.StringFieldUpdateOperationsInput | string
+  replyMessageId?: Prisma.StringFieldUpdateOperationsInput | string
+  prompt?: Prisma.StringFieldUpdateOperationsInput | string
+  model?: Prisma.StringFieldUpdateOperationsInput | string
+  size?: Prisma.StringFieldUpdateOperationsInput | string
+  quality?: Prisma.StringFieldUpdateOperationsInput | string
+  outputCount?: Prisma.IntFieldUpdateOperationsInput | number
+  branchMode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  progress?: Prisma.IntFieldUpdateOperationsInput | number
+  resultFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  attempts?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  assets?: Prisma.ImageAssetUncheckedUpdateManyWithoutTaskNestedInput
+}
+
+export type DrawTaskUncheckedUpdateManyWithoutParentAssetInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  conversationId?: Prisma.StringFieldUpdateOperationsInput | string
+  requestMessageId?: Prisma.StringFieldUpdateOperationsInput | string
+  replyMessageId?: Prisma.StringFieldUpdateOperationsInput | string
+  prompt?: Prisma.StringFieldUpdateOperationsInput | string
+  model?: Prisma.StringFieldUpdateOperationsInput | string
+  size?: Prisma.StringFieldUpdateOperationsInput | string
+  quality?: Prisma.StringFieldUpdateOperationsInput | string
+  outputCount?: Prisma.IntFieldUpdateOperationsInput | number
+  branchMode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   progress?: Prisma.IntFieldUpdateOperationsInput | number
   resultFilename?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -881,6 +1616,10 @@ export type DrawTaskSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   updatedAt?: boolean
   startedAt?: boolean
   finishedAt?: boolean
+  conversation?: boolean | Prisma.ConversationDefaultArgs<ExtArgs>
+  requestMessage?: boolean | Prisma.MessageDefaultArgs<ExtArgs>
+  replyMessage?: boolean | Prisma.MessageDefaultArgs<ExtArgs>
+  parentAsset?: boolean | Prisma.DrawTask$parentAssetArgs<ExtArgs>
   assets?: boolean | Prisma.DrawTask$assetsArgs<ExtArgs>
   _count?: boolean | Prisma.DrawTaskCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["drawTask"]>
@@ -906,6 +1645,10 @@ export type DrawTaskSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   updatedAt?: boolean
   startedAt?: boolean
   finishedAt?: boolean
+  conversation?: boolean | Prisma.ConversationDefaultArgs<ExtArgs>
+  requestMessage?: boolean | Prisma.MessageDefaultArgs<ExtArgs>
+  replyMessage?: boolean | Prisma.MessageDefaultArgs<ExtArgs>
+  parentAsset?: boolean | Prisma.DrawTask$parentAssetArgs<ExtArgs>
 }, ExtArgs["result"]["drawTask"]>
 
 export type DrawTaskSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -929,6 +1672,10 @@ export type DrawTaskSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   updatedAt?: boolean
   startedAt?: boolean
   finishedAt?: boolean
+  conversation?: boolean | Prisma.ConversationDefaultArgs<ExtArgs>
+  requestMessage?: boolean | Prisma.MessageDefaultArgs<ExtArgs>
+  replyMessage?: boolean | Prisma.MessageDefaultArgs<ExtArgs>
+  parentAsset?: boolean | Prisma.DrawTask$parentAssetArgs<ExtArgs>
 }, ExtArgs["result"]["drawTask"]>
 
 export type DrawTaskSelectScalar = {
@@ -956,22 +1703,40 @@ export type DrawTaskSelectScalar = {
 
 export type DrawTaskOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "conversationId" | "requestMessageId" | "replyMessageId" | "prompt" | "model" | "size" | "quality" | "outputCount" | "branchMode" | "parentAssetId" | "status" | "progress" | "resultFilename" | "errorMessage" | "attempts" | "createdAt" | "updatedAt" | "startedAt" | "finishedAt", ExtArgs["result"]["drawTask"]>
 export type DrawTaskInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  conversation?: boolean | Prisma.ConversationDefaultArgs<ExtArgs>
+  requestMessage?: boolean | Prisma.MessageDefaultArgs<ExtArgs>
+  replyMessage?: boolean | Prisma.MessageDefaultArgs<ExtArgs>
+  parentAsset?: boolean | Prisma.DrawTask$parentAssetArgs<ExtArgs>
   assets?: boolean | Prisma.DrawTask$assetsArgs<ExtArgs>
   _count?: boolean | Prisma.DrawTaskCountOutputTypeDefaultArgs<ExtArgs>
 }
-export type DrawTaskIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
-export type DrawTaskIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
+export type DrawTaskIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  conversation?: boolean | Prisma.ConversationDefaultArgs<ExtArgs>
+  requestMessage?: boolean | Prisma.MessageDefaultArgs<ExtArgs>
+  replyMessage?: boolean | Prisma.MessageDefaultArgs<ExtArgs>
+  parentAsset?: boolean | Prisma.DrawTask$parentAssetArgs<ExtArgs>
+}
+export type DrawTaskIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  conversation?: boolean | Prisma.ConversationDefaultArgs<ExtArgs>
+  requestMessage?: boolean | Prisma.MessageDefaultArgs<ExtArgs>
+  replyMessage?: boolean | Prisma.MessageDefaultArgs<ExtArgs>
+  parentAsset?: boolean | Prisma.DrawTask$parentAssetArgs<ExtArgs>
+}
 
 export type $DrawTaskPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "DrawTask"
   objects: {
+    conversation: Prisma.$ConversationPayload<ExtArgs>
+    requestMessage: Prisma.$MessagePayload<ExtArgs>
+    replyMessage: Prisma.$MessagePayload<ExtArgs>
+    parentAsset: Prisma.$ImageAssetPayload<ExtArgs> | null
     assets: Prisma.$ImageAssetPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
-    conversationId: string | null
-    requestMessageId: string | null
-    replyMessageId: string | null
+    conversationId: string
+    requestMessageId: string
+    replyMessageId: string
     prompt: string
     model: string
     size: string
@@ -1382,6 +2147,10 @@ readonly fields: DrawTaskFieldRefs;
  */
 export interface Prisma__DrawTaskClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  conversation<T extends Prisma.ConversationDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ConversationDefaultArgs<ExtArgs>>): Prisma.Prisma__ConversationClient<runtime.Types.Result.GetResult<Prisma.$ConversationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  requestMessage<T extends Prisma.MessageDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MessageDefaultArgs<ExtArgs>>): Prisma.Prisma__MessageClient<runtime.Types.Result.GetResult<Prisma.$MessagePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  replyMessage<T extends Prisma.MessageDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MessageDefaultArgs<ExtArgs>>): Prisma.Prisma__MessageClient<runtime.Types.Result.GetResult<Prisma.$MessagePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  parentAsset<T extends Prisma.DrawTask$parentAssetArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DrawTask$parentAssetArgs<ExtArgs>>): Prisma.Prisma__ImageAssetClient<runtime.Types.Result.GetResult<Prisma.$ImageAssetPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   assets<T extends Prisma.DrawTask$assetsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DrawTask$assetsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ImageAssetPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1684,6 +2453,10 @@ export type DrawTaskCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extens
    * The data used to create many DrawTasks.
    */
   data: Prisma.DrawTaskCreateManyInput | Prisma.DrawTaskCreateManyInput[]
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DrawTaskIncludeCreateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1754,6 +2527,10 @@ export type DrawTaskUpdateManyAndReturnArgs<ExtArgs extends runtime.Types.Extens
    * Limit how many DrawTasks to update.
    */
   limit?: number
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DrawTaskIncludeUpdateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1820,6 +2597,25 @@ export type DrawTaskDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Inte
    * Limit how many DrawTasks to delete.
    */
   limit?: number
+}
+
+/**
+ * DrawTask.parentAsset
+ */
+export type DrawTask$parentAssetArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ImageAsset
+   */
+  select?: Prisma.ImageAssetSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ImageAsset
+   */
+  omit?: Prisma.ImageAssetOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ImageAssetInclude<ExtArgs> | null
+  where?: Prisma.ImageAssetWhereInput
 }
 
 /**

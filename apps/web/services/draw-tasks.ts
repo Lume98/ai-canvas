@@ -1,3 +1,21 @@
+/**
+ * 绘图任务服务
+ *
+ * 管理绘图任务（DrawTask）的完整生命周期：创建、查询、执行。
+ * 创建任务时会同步执行 AI 图片生成流程：
+ *
+ * 1. 校验输入参数
+ * 2. 在事务中创建用户消息、AI 回复消息和任务记录
+ * 3. 调用 OpenAI API 生成图片并保存到本地
+ * 4. 在事务中更新任务状态、创建图片资源记录
+ * 5. 若生成失败，记录错误信息并标记任务和消息为 failed
+ *
+ * 对外暴露的 API：
+ * - GET  /api/draw-tasks       — 列出最近 50 个任务
+ * - GET  /api/draw-tasks/:id   — 获取单个任务详情
+ * - POST /api/draw-tasks       — 创建并执行新任务
+ */
+
 import { NextResponse } from "next/server"
 
 import { initDatabase, prisma } from "@/db"
@@ -16,6 +34,7 @@ import {
 } from "./serializers"
 import type { DrawTaskRecord } from "./types"
 
+/** 列出最近 50 个绘图任务，按创建时间倒序 */
 export async function listDrawTasks() {
   await initDatabase()
   const rows = await prisma.drawTask.findMany({
@@ -30,6 +49,10 @@ export async function listDrawTasks() {
   })
 }
 
+/**
+ * 获取单个绘图任务详情
+ * @param taskId - 任务 ID
+ */
 export async function readDrawTask(taskId: string) {
   await initDatabase()
   const row = await prisma.drawTask.findUnique({ where: { id: taskId } })
@@ -44,6 +67,10 @@ export async function readDrawTask(taskId: string) {
   })
 }
 
+/**
+ * 创建绘图任务并同步执行
+ * 校验失败直接返回错误，执行过程中的异常会被捕获并转为失败状态
+ */
 export async function createDrawTask(request: Request) {
   const payload = await readJson(request)
   const input = validateDrawTaskInput(payload)
@@ -57,6 +84,16 @@ export async function createDrawTask(request: Request) {
   }
 }
 
+/**
+ * 同步执行绘图任务的核心流程
+ *
+ * 完整步骤：
+ * 1. 事务：校验会话存在 → 计算消息排序 → 创建用户消息 + AI 消息 + 任务记录 → 更新会话时间
+ * 2. 获取供应商配置 → 读取参考图（如有）→ 调用 OpenAI 生成图片 → 保存图片文件
+ * 3. 事务：更新任务状态为成功 → 更新消息状态 → 创建图片资源记录
+ *    若步骤 2 失败：事务中标记任务和消息为失败
+ * 4. 返回完整的任务记录（含图片资源）
+ */
 async function createSynchronousDrawTask(
   input: DrawTaskInput,
 ): Promise<DrawTaskRecord> {
@@ -65,6 +102,7 @@ async function createSynchronousDrawTask(
   const requestMessageId = buildId("message")
   const replyMessageId = buildId("message")
 
+  // 阶段一：在事务中创建消息和任务的基础记录
   await prisma.$transaction(async (tx) => {
     const conversationExists = await tx.conversation.findUnique({
       where: { id: input.conversationId },
@@ -75,12 +113,14 @@ async function createSynchronousDrawTask(
       throw apiError("会话不存在。", 404, CONVERSATION_NOT_FOUND_CODE)
     }
 
+    // 计算下一条消息的排序序号
     const nextSortOrderAggregate = await tx.message.aggregate({
       where: { conversationId: input.conversationId },
       _max: { sortOrder: true },
     })
     const nextSortOrder = (nextSortOrderAggregate._max.sortOrder ?? 0) + 1
 
+    // 创建用户提示词消息
     await tx.message.create({
       data: {
         id: requestMessageId,
@@ -93,6 +133,7 @@ async function createSynchronousDrawTask(
       },
     })
 
+    // 创建 AI 回复消息（占位，状态为 pending）
     await tx.message.create({
       data: {
         id: replyMessageId,
@@ -105,6 +146,7 @@ async function createSynchronousDrawTask(
       },
     })
 
+    // 创建绘图任务记录
     await tx.drawTask.create({
       data: {
         id: taskId,
@@ -125,12 +167,14 @@ async function createSynchronousDrawTask(
       },
     })
 
+    // 更新会话的 updatedAt 时间戳
     await tx.conversation.update({
       where: { id: input.conversationId },
       data: { updatedAt: new Date() },
     })
   })
 
+  // 阶段二：调用 AI 接口生成图片并保存
   try {
     const providerConfig = await getProviderConfigRecord()
     const sourceImageBytes = input.parentAssetId
@@ -145,6 +189,7 @@ async function createSynchronousDrawTask(
       imageBytesList.map((imageBytes) => saveGeneratedImage(imageBytes)),
     )
 
+    // 阶段三（成功）：更新任务和消息状态，创建图片资源记录
     await prisma.$transaction(async (tx) => {
       await tx.drawTask.update({
         where: { id: taskId },
@@ -162,6 +207,7 @@ async function createSynchronousDrawTask(
         data: { status: "succeeded" },
       })
 
+      // 清除旧资源后重新写入（防止重复）
       await tx.imageAsset.deleteMany({ where: { taskId } })
 
       if (persistedImages.length > 0) {
@@ -180,6 +226,7 @@ async function createSynchronousDrawTask(
       }
     })
   } catch (error) {
+    // 阶段三（失败）：记录错误信息，标记任务和消息为失败
     const normalizedError = normalizeError(error)
 
     await prisma.$transaction(async (tx) => {
@@ -199,11 +246,16 @@ async function createSynchronousDrawTask(
     })
   }
 
+  // 返回最终任务状态（成功或失败）
   const taskRow = await prisma.drawTask.findUniqueOrThrow({ where: { id: taskId } })
   const assetsByTaskId = await listAssetsByTaskIds([taskId])
   return serializeTask(taskRow, assetsByTaskId.get(taskId) ?? [])
 }
 
+/**
+ * 根据 parentAssetId 读取来源图片的字节数据
+ * 用于图生图场景，将参考图传给 OpenAI edits 端点
+ */
 async function readSourceImageBytes(parentAssetId: string) {
   await initDatabase()
   const row = await prisma.imageAsset.findUnique({

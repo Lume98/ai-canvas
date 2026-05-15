@@ -175,6 +175,7 @@ export type ConversationWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Conversation"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Conversation"> | Date | string
   messages?: Prisma.MessageListRelationFilter
+  drawTasks?: Prisma.DrawTaskListRelationFilter
   assets?: Prisma.ImageAssetListRelationFilter
 }
 
@@ -184,6 +185,7 @@ export type ConversationOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   messages?: Prisma.MessageOrderByRelationAggregateInput
+  drawTasks?: Prisma.DrawTaskOrderByRelationAggregateInput
   assets?: Prisma.ImageAssetOrderByRelationAggregateInput
 }
 
@@ -196,6 +198,7 @@ export type ConversationWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"Conversation"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Conversation"> | Date | string
   messages?: Prisma.MessageListRelationFilter
+  drawTasks?: Prisma.DrawTaskListRelationFilter
   assets?: Prisma.ImageAssetListRelationFilter
 }, "id">
 
@@ -225,6 +228,7 @@ export type ConversationCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   messages?: Prisma.MessageCreateNestedManyWithoutConversationInput
+  drawTasks?: Prisma.DrawTaskCreateNestedManyWithoutConversationInput
   assets?: Prisma.ImageAssetCreateNestedManyWithoutConversationInput
 }
 
@@ -234,6 +238,7 @@ export type ConversationUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   messages?: Prisma.MessageUncheckedCreateNestedManyWithoutConversationInput
+  drawTasks?: Prisma.DrawTaskUncheckedCreateNestedManyWithoutConversationInput
   assets?: Prisma.ImageAssetUncheckedCreateNestedManyWithoutConversationInput
 }
 
@@ -243,6 +248,7 @@ export type ConversationUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   messages?: Prisma.MessageUpdateManyWithoutConversationNestedInput
+  drawTasks?: Prisma.DrawTaskUpdateManyWithoutConversationNestedInput
   assets?: Prisma.ImageAssetUpdateManyWithoutConversationNestedInput
 }
 
@@ -252,6 +258,7 @@ export type ConversationUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   messages?: Prisma.MessageUncheckedUpdateManyWithoutConversationNestedInput
+  drawTasks?: Prisma.DrawTaskUncheckedUpdateManyWithoutConversationNestedInput
   assets?: Prisma.ImageAssetUncheckedUpdateManyWithoutConversationNestedInput
 }
 
@@ -324,6 +331,20 @@ export type ConversationUpdateOneRequiredWithoutMessagesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ConversationUpdateToOneWithWhereWithoutMessagesInput, Prisma.ConversationUpdateWithoutMessagesInput>, Prisma.ConversationUncheckedUpdateWithoutMessagesInput>
 }
 
+export type ConversationCreateNestedOneWithoutDrawTasksInput = {
+  create?: Prisma.XOR<Prisma.ConversationCreateWithoutDrawTasksInput, Prisma.ConversationUncheckedCreateWithoutDrawTasksInput>
+  connectOrCreate?: Prisma.ConversationCreateOrConnectWithoutDrawTasksInput
+  connect?: Prisma.ConversationWhereUniqueInput
+}
+
+export type ConversationUpdateOneRequiredWithoutDrawTasksNestedInput = {
+  create?: Prisma.XOR<Prisma.ConversationCreateWithoutDrawTasksInput, Prisma.ConversationUncheckedCreateWithoutDrawTasksInput>
+  connectOrCreate?: Prisma.ConversationCreateOrConnectWithoutDrawTasksInput
+  upsert?: Prisma.ConversationUpsertWithoutDrawTasksInput
+  connect?: Prisma.ConversationWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ConversationUpdateToOneWithWhereWithoutDrawTasksInput, Prisma.ConversationUpdateWithoutDrawTasksInput>, Prisma.ConversationUncheckedUpdateWithoutDrawTasksInput>
+}
+
 export type ConversationCreateNestedOneWithoutAssetsInput = {
   create?: Prisma.XOR<Prisma.ConversationCreateWithoutAssetsInput, Prisma.ConversationUncheckedCreateWithoutAssetsInput>
   connectOrCreate?: Prisma.ConversationCreateOrConnectWithoutAssetsInput
@@ -343,6 +364,7 @@ export type ConversationCreateWithoutMessagesInput = {
   title: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  drawTasks?: Prisma.DrawTaskCreateNestedManyWithoutConversationInput
   assets?: Prisma.ImageAssetCreateNestedManyWithoutConversationInput
 }
 
@@ -351,6 +373,7 @@ export type ConversationUncheckedCreateWithoutMessagesInput = {
   title: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  drawTasks?: Prisma.DrawTaskUncheckedCreateNestedManyWithoutConversationInput
   assets?: Prisma.ImageAssetUncheckedCreateNestedManyWithoutConversationInput
 }
 
@@ -375,6 +398,7 @@ export type ConversationUpdateWithoutMessagesInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  drawTasks?: Prisma.DrawTaskUpdateManyWithoutConversationNestedInput
   assets?: Prisma.ImageAssetUpdateManyWithoutConversationNestedInput
 }
 
@@ -383,6 +407,59 @@ export type ConversationUncheckedUpdateWithoutMessagesInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  drawTasks?: Prisma.DrawTaskUncheckedUpdateManyWithoutConversationNestedInput
+  assets?: Prisma.ImageAssetUncheckedUpdateManyWithoutConversationNestedInput
+}
+
+export type ConversationCreateWithoutDrawTasksInput = {
+  id: string
+  title: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  messages?: Prisma.MessageCreateNestedManyWithoutConversationInput
+  assets?: Prisma.ImageAssetCreateNestedManyWithoutConversationInput
+}
+
+export type ConversationUncheckedCreateWithoutDrawTasksInput = {
+  id: string
+  title: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  messages?: Prisma.MessageUncheckedCreateNestedManyWithoutConversationInput
+  assets?: Prisma.ImageAssetUncheckedCreateNestedManyWithoutConversationInput
+}
+
+export type ConversationCreateOrConnectWithoutDrawTasksInput = {
+  where: Prisma.ConversationWhereUniqueInput
+  create: Prisma.XOR<Prisma.ConversationCreateWithoutDrawTasksInput, Prisma.ConversationUncheckedCreateWithoutDrawTasksInput>
+}
+
+export type ConversationUpsertWithoutDrawTasksInput = {
+  update: Prisma.XOR<Prisma.ConversationUpdateWithoutDrawTasksInput, Prisma.ConversationUncheckedUpdateWithoutDrawTasksInput>
+  create: Prisma.XOR<Prisma.ConversationCreateWithoutDrawTasksInput, Prisma.ConversationUncheckedCreateWithoutDrawTasksInput>
+  where?: Prisma.ConversationWhereInput
+}
+
+export type ConversationUpdateToOneWithWhereWithoutDrawTasksInput = {
+  where?: Prisma.ConversationWhereInput
+  data: Prisma.XOR<Prisma.ConversationUpdateWithoutDrawTasksInput, Prisma.ConversationUncheckedUpdateWithoutDrawTasksInput>
+}
+
+export type ConversationUpdateWithoutDrawTasksInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  messages?: Prisma.MessageUpdateManyWithoutConversationNestedInput
+  assets?: Prisma.ImageAssetUpdateManyWithoutConversationNestedInput
+}
+
+export type ConversationUncheckedUpdateWithoutDrawTasksInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  messages?: Prisma.MessageUncheckedUpdateManyWithoutConversationNestedInput
   assets?: Prisma.ImageAssetUncheckedUpdateManyWithoutConversationNestedInput
 }
 
@@ -392,6 +469,7 @@ export type ConversationCreateWithoutAssetsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   messages?: Prisma.MessageCreateNestedManyWithoutConversationInput
+  drawTasks?: Prisma.DrawTaskCreateNestedManyWithoutConversationInput
 }
 
 export type ConversationUncheckedCreateWithoutAssetsInput = {
@@ -400,6 +478,7 @@ export type ConversationUncheckedCreateWithoutAssetsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   messages?: Prisma.MessageUncheckedCreateNestedManyWithoutConversationInput
+  drawTasks?: Prisma.DrawTaskUncheckedCreateNestedManyWithoutConversationInput
 }
 
 export type ConversationCreateOrConnectWithoutAssetsInput = {
@@ -424,6 +503,7 @@ export type ConversationUpdateWithoutAssetsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   messages?: Prisma.MessageUpdateManyWithoutConversationNestedInput
+  drawTasks?: Prisma.DrawTaskUpdateManyWithoutConversationNestedInput
 }
 
 export type ConversationUncheckedUpdateWithoutAssetsInput = {
@@ -432,6 +512,7 @@ export type ConversationUncheckedUpdateWithoutAssetsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   messages?: Prisma.MessageUncheckedUpdateManyWithoutConversationNestedInput
+  drawTasks?: Prisma.DrawTaskUncheckedUpdateManyWithoutConversationNestedInput
 }
 
 
@@ -441,11 +522,13 @@ export type ConversationUncheckedUpdateWithoutAssetsInput = {
 
 export type ConversationCountOutputType = {
   messages: number
+  drawTasks: number
   assets: number
 }
 
 export type ConversationCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   messages?: boolean | ConversationCountOutputTypeCountMessagesArgs
+  drawTasks?: boolean | ConversationCountOutputTypeCountDrawTasksArgs
   assets?: boolean | ConversationCountOutputTypeCountAssetsArgs
 }
 
@@ -469,6 +552,13 @@ export type ConversationCountOutputTypeCountMessagesArgs<ExtArgs extends runtime
 /**
  * ConversationCountOutputType without action
  */
+export type ConversationCountOutputTypeCountDrawTasksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DrawTaskWhereInput
+}
+
+/**
+ * ConversationCountOutputType without action
+ */
 export type ConversationCountOutputTypeCountAssetsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.ImageAssetWhereInput
 }
@@ -480,6 +570,7 @@ export type ConversationSelect<ExtArgs extends runtime.Types.Extensions.Internal
   createdAt?: boolean
   updatedAt?: boolean
   messages?: boolean | Prisma.Conversation$messagesArgs<ExtArgs>
+  drawTasks?: boolean | Prisma.Conversation$drawTasksArgs<ExtArgs>
   assets?: boolean | Prisma.Conversation$assetsArgs<ExtArgs>
   _count?: boolean | Prisma.ConversationCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["conversation"]>
@@ -508,6 +599,7 @@ export type ConversationSelectScalar = {
 export type ConversationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "createdAt" | "updatedAt", ExtArgs["result"]["conversation"]>
 export type ConversationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   messages?: boolean | Prisma.Conversation$messagesArgs<ExtArgs>
+  drawTasks?: boolean | Prisma.Conversation$drawTasksArgs<ExtArgs>
   assets?: boolean | Prisma.Conversation$assetsArgs<ExtArgs>
   _count?: boolean | Prisma.ConversationCountOutputTypeDefaultArgs<ExtArgs>
 }
@@ -518,6 +610,7 @@ export type $ConversationPayload<ExtArgs extends runtime.Types.Extensions.Intern
   name: "Conversation"
   objects: {
     messages: Prisma.$MessagePayload<ExtArgs>[]
+    drawTasks: Prisma.$DrawTaskPayload<ExtArgs>[]
     assets: Prisma.$ImageAssetPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -920,6 +1013,7 @@ readonly fields: ConversationFieldRefs;
 export interface Prisma__ConversationClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   messages<T extends Prisma.Conversation$messagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Conversation$messagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MessagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  drawTasks<T extends Prisma.Conversation$drawTasksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Conversation$drawTasksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DrawTaskPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   assets<T extends Prisma.Conversation$assetsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Conversation$assetsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ImageAssetPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1366,6 +1460,30 @@ export type Conversation$messagesArgs<ExtArgs extends runtime.Types.Extensions.I
   take?: number
   skip?: number
   distinct?: Prisma.MessageScalarFieldEnum | Prisma.MessageScalarFieldEnum[]
+}
+
+/**
+ * Conversation.drawTasks
+ */
+export type Conversation$drawTasksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DrawTask
+   */
+  select?: Prisma.DrawTaskSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DrawTask
+   */
+  omit?: Prisma.DrawTaskOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DrawTaskInclude<ExtArgs> | null
+  where?: Prisma.DrawTaskWhereInput
+  orderBy?: Prisma.DrawTaskOrderByWithRelationInput | Prisma.DrawTaskOrderByWithRelationInput[]
+  cursor?: Prisma.DrawTaskWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DrawTaskScalarFieldEnum | Prisma.DrawTaskScalarFieldEnum[]
 }
 
 /**

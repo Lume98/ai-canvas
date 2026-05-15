@@ -1,4 +1,4 @@
-import { createDrawTask, listDrawTasks } from "@/services/ai-canvas"
+import { createDrawTask, listDrawTasks } from "@/services"
 
 export const runtime = "nodejs"
 
