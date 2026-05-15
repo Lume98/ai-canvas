@@ -1,8 +1,14 @@
-import { DatabaseSync } from "node:sqlite"
-import { existsSync } from "node:fs"
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises"
 import path from "node:path"
 import { NextResponse } from "next/server"
+
+import { dataDir, initDatabase, prisma } from "@/db"
+import type {
+  Conversation as PrismaConversation,
+  DrawTask as PrismaDrawTask,
+  ImageAsset as PrismaImageAsset,
+  Message as PrismaMessage,
+} from "@/generated/prisma/client"
 
 import {
   branchModes,
@@ -19,25 +25,7 @@ const PNG_SIGNATURE = "\x89PNG\r\n\x1a\n"
 const GENERATED_IMAGE_FILENAME_PATTERN = /^[a-zA-Z0-9_-]+\.png$/
 const CONVERSATION_NOT_FOUND_CODE = "CONVERSATION_NOT_FOUND"
 
-const repoRoot = resolveRepoRoot()
-const dataDir = path.join(repoRoot, ".data")
-const databasePath = path.join(dataDir, "ai-canvas.sqlite")
 const generatedImagesDir = path.join(dataDir, "generated-images")
-
-function resolveRepoRoot() {
-  const currentWorkingDirectory = process.cwd()
-  const workspaceRootCandidate = path.resolve(currentWorkingDirectory, "../..")
-
-  if (
-    existsSync(path.join(currentWorkingDirectory, "app")) &&
-    existsSync(path.join(currentWorkingDirectory, "package.json")) &&
-    existsSync(path.join(workspaceRootCandidate, "pnpm-workspace.yaml"))
-  ) {
-    return workspaceRootCandidate
-  }
-
-  return currentWorkingDirectory
-}
 
 type ProviderConfigRecord = {
   apiKey: string
@@ -149,126 +137,6 @@ const BRANCH_MODE_INSTRUCTIONS: Record<BranchMode, string> = {
     "请严格围绕参考图中的主体进行修改，尽量保持主体身份、核心轮廓、关键造型与辨识特征，仅按提示词做局部调整、补充或润饰。",
   transform:
     "请把参考图作为创作起点进行大幅改造，可以重构场景、风格、色彩与表现手法，但仍应与参考图存在可追溯的视觉关联。",
-}
-
-let database: DatabaseSync | null = null
-
-function getDatabase() {
-  if (database) return database
-
-  database = new DatabaseSync(databasePath)
-  database.exec("PRAGMA journal_mode = WAL")
-  database.exec("PRAGMA busy_timeout = 5000")
-  database.exec("PRAGMA foreign_keys = ON")
-  initSchema(database)
-  return database
-}
-
-function initSchema(db: DatabaseSync) {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS conversations (
-      id TEXT PRIMARY KEY,
-      title TEXT NOT NULL,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS messages (
-      id TEXT PRIMARY KEY,
-      conversation_id TEXT NOT NULL,
-      role TEXT NOT NULL,
-      type TEXT NOT NULL,
-      text TEXT,
-      status TEXT NOT NULL,
-      sort_order INTEGER NOT NULL DEFAULT 0,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY(conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
-    );
-
-    CREATE TABLE IF NOT EXISTS draw_tasks (
-      id TEXT PRIMARY KEY,
-      conversation_id TEXT,
-      request_message_id TEXT,
-      reply_message_id TEXT,
-      prompt TEXT NOT NULL,
-      model TEXT NOT NULL,
-      size TEXT NOT NULL,
-      quality TEXT NOT NULL,
-      output_count INTEGER NOT NULL DEFAULT 1,
-      branch_mode TEXT,
-      parent_asset_id TEXT,
-      status TEXT NOT NULL,
-      progress INTEGER NOT NULL DEFAULT 0,
-      result_filename TEXT,
-      error_message TEXT,
-      attempts INTEGER NOT NULL DEFAULT 0,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      started_at TEXT,
-      finished_at TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS image_assets (
-      id TEXT PRIMARY KEY,
-      task_id TEXT NOT NULL,
-      conversation_id TEXT NOT NULL,
-      message_id TEXT NOT NULL,
-      filename TEXT NOT NULL,
-      width INTEGER NOT NULL,
-      height INTEGER NOT NULL,
-      sort_order INTEGER NOT NULL DEFAULT 0,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY(task_id) REFERENCES draw_tasks(id) ON DELETE CASCADE,
-      FOREIGN KEY(conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
-      FOREIGN KEY(message_id) REFERENCES messages(id) ON DELETE CASCADE
-    );
-
-    CREATE TABLE IF NOT EXISTS provider_config (
-      id INTEGER PRIMARY KEY CHECK (id = 1),
-      api_key TEXT NOT NULL,
-      base_url TEXT NOT NULL,
-      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_messages_conversation_created_at
-    ON messages(conversation_id, sort_order, created_at);
-
-    CREATE INDEX IF NOT EXISTS idx_draw_tasks_status_created_at
-    ON draw_tasks(status, created_at);
-
-    CREATE INDEX IF NOT EXISTS idx_draw_tasks_conversation_created_at
-    ON draw_tasks(conversation_id, created_at);
-
-    CREATE INDEX IF NOT EXISTS idx_draw_tasks_reply_message_id
-    ON draw_tasks(reply_message_id);
-
-    CREATE INDEX IF NOT EXISTS idx_image_assets_message_sort_order
-    ON image_assets(message_id, sort_order);
-  `)
-
-  migrateColumn(db, "messages", "sort_order", "INTEGER NOT NULL DEFAULT 0")
-  migrateColumn(db, "draw_tasks", "conversation_id", "TEXT")
-  migrateColumn(db, "draw_tasks", "request_message_id", "TEXT")
-  migrateColumn(db, "draw_tasks", "reply_message_id", "TEXT")
-  migrateColumn(db, "draw_tasks", "output_count", "INTEGER NOT NULL DEFAULT 1")
-  migrateColumn(db, "draw_tasks", "branch_mode", "TEXT")
-  migrateColumn(db, "draw_tasks", "parent_asset_id", "TEXT")
-  migrateColumn(db, "draw_tasks", "result_filename", "TEXT")
-}
-
-function migrateColumn(
-  db: DatabaseSync,
-  tableName: string,
-  columnName: string,
-  columnDefinition: string,
-) {
-  const columns = db
-    .prepare(`PRAGMA table_info(${tableName})`)
-    .all() as Array<{ name: string }>
-
-  if (columns.some((column) => column.name === columnName)) return
-  db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnDefinition}`)
 }
 
 function buildId(prefix: string) {
@@ -547,75 +415,83 @@ async function parseOpenAiError(response: Response): Promise<ApiError> {
   return apiError(`OpenAI 接口返回 ${response.status}。`, response.status)
 }
 
-function serializeConversation(row: Record<string, unknown>): ConversationRecord {
+function serializeDate(value: Date | string | null | undefined) {
+  if (value instanceof Date) return value.toISOString()
+  return typeof value === "string" && value ? new Date(value).toISOString() : null
+}
+
+function serializeRequiredDate(value: Date | string) {
+  return serializeDate(value) ?? new Date(0).toISOString()
+}
+
+function serializeConversation(row: PrismaConversation): ConversationRecord {
   return {
-    id: String(row.id),
-    title: String(row.title),
-    createdAt: String(row.created_at),
-    updatedAt: String(row.updated_at),
+    id: row.id,
+    title: row.title,
+    createdAt: serializeRequiredDate(row.createdAt),
+    updatedAt: serializeRequiredDate(row.updatedAt),
   }
 }
 
-function serializeTask(row: Record<string, unknown>, assets: ImageAssetRecord[]): DrawTaskRecord {
-  const resultFilename =
-    typeof row.result_filename === "string" && row.result_filename ? row.result_filename : null
+function serializeTask(row: PrismaDrawTask, assets: ImageAssetRecord[]): DrawTaskRecord {
+  const resultFilename = row.resultFilename || null
 
   return {
-    id: String(row.id),
-    conversationId: toNullableString(row.conversation_id),
-    requestMessageId: toNullableString(row.request_message_id),
-    replyMessageId: toNullableString(row.reply_message_id),
-    prompt: String(row.prompt),
-    model: String(row.model),
-    size: String(row.size),
-    quality: String(row.quality),
-    outputCount: Number(row.output_count ?? 1),
-    branchMode: toNullableBranchMode(row.branch_mode),
-    parentAssetId: toNullableString(row.parent_asset_id),
-    status: String(row.status) as DrawTaskStatus,
-    progress: Number(row.progress ?? 0),
+    id: row.id,
+    conversationId: toNullableString(row.conversationId),
+    requestMessageId: toNullableString(row.requestMessageId),
+    replyMessageId: toNullableString(row.replyMessageId),
+    prompt: row.prompt,
+    model: row.model,
+    size: row.size,
+    quality: row.quality,
+    outputCount: row.outputCount,
+    branchMode: toNullableBranchMode(row.branchMode),
+    parentAssetId: toNullableString(row.parentAssetId),
+    status: row.status as DrawTaskStatus,
+    progress: row.progress,
     resultUrl: resultFilename ? buildGeneratedImageUrl(resultFilename) : null,
-    errorMessage: toNullableString(row.error_message),
-    attempts: Number(row.attempts ?? 0),
-    createdAt: String(row.created_at),
-    updatedAt: String(row.updated_at),
-    startedAt: toNullableString(row.started_at),
-    finishedAt: toNullableString(row.finished_at),
+    errorMessage: toNullableString(row.errorMessage),
+    attempts: row.attempts,
+    createdAt: serializeRequiredDate(row.createdAt),
+    updatedAt: serializeRequiredDate(row.updatedAt),
+    startedAt: serializeDate(row.startedAt),
+    finishedAt: serializeDate(row.finishedAt),
     assets,
   }
 }
 
-function serializeAsset(row: Record<string, unknown>): ImageAssetRecord {
-  const filename = String(row.filename)
+function serializeAsset(row: PrismaImageAsset): ImageAssetRecord {
+  const filename = row.filename
   return {
-    id: String(row.id),
-    taskId: String(row.task_id),
-    conversationId: String(row.conversation_id),
-    messageId: String(row.message_id),
+    id: row.id,
+    taskId: row.taskId,
+    conversationId: row.conversationId,
+    messageId: row.messageId,
     filename,
     url: buildGeneratedImageUrl(filename),
-    width: Number(row.width),
-    height: Number(row.height),
-    sortOrder: Number(row.sort_order ?? 0),
-    createdAt: String(row.created_at),
+    width: row.width,
+    height: row.height,
+    sortOrder: row.sortOrder,
+    createdAt: serializeRequiredDate(row.createdAt),
   }
 }
 
 function serializeMessage(
-  row: Record<string, unknown>,
+  row: PrismaMessage,
   assets: ImageAssetRecord[],
   task?: DrawTaskRecord,
 ): ConversationMessageRecord {
   return {
-    id: String(row.id),
-    conversationId: String(row.conversation_id),
-    role: String(row.role) as "user" | "assistant",
-    type: String(row.type) as "prompt" | "image_result" | "error",
+    id: row.id,
+    conversationId: row.conversationId,
+    role: row.role as "user" | "assistant",
+    type: row.type as "prompt" | "image_result" | "error",
     text: toNullableString(row.text),
-    status: String(row.status) as MessageStatus,
-    sortOrder: Number(row.sort_order ?? 0),
-    createdAt: String(row.created_at),
-    updatedAt: String(row.updated_at),
+    status: row.status as MessageStatus,
+    sortOrder: row.sortOrder,
+    createdAt: serializeRequiredDate(row.createdAt),
+    updatedAt: serializeRequiredDate(row.updatedAt),
     assets,
     ...(task ? { task } : {}),
   }
@@ -631,15 +507,12 @@ function toNullableBranchMode(value: unknown) {
     : null
 }
 
-function listAssetsByTaskIds(db: DatabaseSync, taskIds: string[]) {
+async function listAssetsByTaskIds(taskIds: string[]) {
   if (taskIds.length === 0) return new Map<string, ImageAssetRecord[]>()
-  const statement = db.prepare(`
-    SELECT *
-    FROM image_assets
-    WHERE task_id IN (${taskIds.map(() => "?").join(", ")})
-    ORDER BY sort_order ASC, created_at ASC, id ASC
-  `)
-  const rows = statement.all(...taskIds) as Array<Record<string, unknown>>
+  const rows = await prisma.imageAsset.findMany({
+    where: { taskId: { in: taskIds } },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }, { id: "asc" }],
+  })
   const map = new Map<string, ImageAssetRecord[]>()
   for (const row of rows) {
     const asset = serializeAsset(row)
@@ -648,15 +521,12 @@ function listAssetsByTaskIds(db: DatabaseSync, taskIds: string[]) {
   return map
 }
 
-function listAssetsByMessageIds(db: DatabaseSync, messageIds: string[]) {
+async function listAssetsByMessageIds(messageIds: string[]) {
   if (messageIds.length === 0) return new Map<string, ImageAssetRecord[]>()
-  const statement = db.prepare(`
-    SELECT *
-    FROM image_assets
-    WHERE message_id IN (${messageIds.map(() => "?").join(", ")})
-    ORDER BY sort_order ASC, created_at ASC, id ASC
-  `)
-  const rows = statement.all(...messageIds) as Array<Record<string, unknown>>
+  const rows = await prisma.imageAsset.findMany({
+    where: { messageId: { in: messageIds } },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }, { id: "asc" }],
+  })
   const map = new Map<string, ImageAssetRecord[]>()
   for (const row of rows) {
     const asset = serializeAsset(row)
@@ -665,36 +535,24 @@ function listAssetsByMessageIds(db: DatabaseSync, messageIds: string[]) {
   return map
 }
 
-function listTasksByReplyMessageIds(db: DatabaseSync, replyMessageIds: string[]) {
+async function listTasksByReplyMessageIds(replyMessageIds: string[]) {
   if (replyMessageIds.length === 0) return new Map<string, DrawTaskRecord>()
-  const statement = db.prepare(`
-    SELECT *
-    FROM draw_tasks
-    WHERE reply_message_id IN (${replyMessageIds.map(() => "?").join(", ")})
-  `)
-  const rows = statement.all(...replyMessageIds) as Array<Record<string, unknown>>
-  const assetsByTaskId = listAssetsByTaskIds(
-    db,
-    rows.map((row) => String(row.id)),
-  )
+  const rows = await prisma.drawTask.findMany({
+    where: { replyMessageId: { in: replyMessageIds } },
+  })
+  const assetsByTaskId = await listAssetsByTaskIds(rows.map((row) => row.id))
   const map = new Map<string, DrawTaskRecord>()
   for (const row of rows) {
-    const task = serializeTask(row, assetsByTaskId.get(String(row.id)) ?? [])
-    const replyMessageId = toNullableString(row.reply_message_id)
+    const task = serializeTask(row, assetsByTaskId.get(row.id) ?? [])
+    const replyMessageId = toNullableString(row.replyMessageId)
     if (replyMessageId) map.set(replyMessageId, task)
   }
   return map
 }
 
-function getProviderConfigRecord() {
-  const db = getDatabase()
-  const row = db
-    .prepare(`
-      SELECT api_key, base_url, updated_at
-      FROM provider_config
-      WHERE id = 1
-    `)
-    .get() as Record<string, unknown> | undefined
+async function getProviderConfigRecord() {
+  await initDatabase()
+  const row = await prisma.providerConfig.findUnique({ where: { id: 1 } })
 
   if (!row) {
     return {
@@ -706,24 +564,21 @@ function getProviderConfigRecord() {
   }
 
   return {
-    apiKey: String(row.api_key),
-    baseUrl: String(row.base_url),
+    apiKey: row.apiKey,
+    baseUrl: row.baseUrl,
     hasApiKey: true,
-    updatedAt: String(row.updated_at),
+    updatedAt: serializeDate(row.updatedAt),
   } satisfies ProviderConfigRecord
 }
 
 async function readSourceImageBytes(parentAssetId: string) {
-  const db = getDatabase()
-  const row = db
-    .prepare(`
-      SELECT filename
-      FROM image_assets
-      WHERE id = ?
-    `)
-    .get(parentAssetId) as Record<string, unknown> | undefined
+  await initDatabase()
+  const row = await prisma.imageAsset.findUnique({
+    where: { id: parentAssetId },
+    select: { filename: true },
+  })
 
-  if (!row?.filename || typeof row.filename !== "string") {
+  if (!row?.filename) {
     throw apiError("来源图片不存在，无法继续生成。", 404)
   }
 
@@ -747,7 +602,7 @@ function resolveGeneratedImagePath(filename: string) {
 }
 
 export async function getProviderConfig() {
-  return NextResponse.json({ config: getProviderConfigRecord() })
+  return NextResponse.json({ config: await getProviderConfigRecord() })
 }
 
 export async function saveProviderConfig(request: Request) {
@@ -755,49 +610,39 @@ export async function saveProviderConfig(request: Request) {
   const input = validateProviderConfigInput(payload)
   if ("message" in input) return errorResponse(input)
 
-  const db = getDatabase()
-  db.prepare(`
-    INSERT INTO provider_config (id, api_key, base_url, updated_at)
-    VALUES (1, ?, ?, CURRENT_TIMESTAMP)
-    ON CONFLICT(id) DO UPDATE SET
-      api_key = excluded.api_key,
-      base_url = excluded.base_url,
-      updated_at = CURRENT_TIMESTAMP
-  `).run(input.apiKey, input.baseUrl)
+  await initDatabase()
+  await prisma.providerConfig.upsert({
+    where: { id: 1 },
+    create: { id: 1, apiKey: input.apiKey, baseUrl: input.baseUrl },
+    update: { apiKey: input.apiKey, baseUrl: input.baseUrl },
+  })
 
-  return NextResponse.json({ config: getProviderConfigRecord() })
+  return NextResponse.json({ config: await getProviderConfigRecord() })
 }
 
 export async function clearProviderConfig() {
-  getDatabase().prepare("DELETE FROM provider_config WHERE id = 1").run()
-  return NextResponse.json({ config: getProviderConfigRecord() })
+  await initDatabase()
+  await prisma.providerConfig.deleteMany({ where: { id: 1 } })
+  return NextResponse.json({ config: await getProviderConfigRecord() })
 }
 
 export async function createConversation(request: Request) {
   const payload = asObject(await readJson(request))
   const title = asTrimmedString(payload?.title) || "未命名会话"
-  const db = getDatabase()
   const conversationId = buildId("conversation")
-  db.prepare(`
-    INSERT INTO conversations (id, title)
-    VALUES (?, ?)
-  `).run(conversationId, title)
-
-  const row = db
-    .prepare("SELECT * FROM conversations WHERE id = ?")
-    .get(conversationId) as Record<string, unknown>
+  await initDatabase()
+  const row = await prisma.conversation.create({
+    data: { id: conversationId, title },
+  })
 
   return NextResponse.json({ conversation: serializeConversation(row) }, { status: 201 })
 }
 
 export async function listConversations() {
-  const rows = getDatabase()
-    .prepare(`
-      SELECT *
-      FROM conversations
-      ORDER BY updated_at DESC, id DESC
-    `)
-    .all() as Array<Record<string, unknown>>
+  await initDatabase()
+  const rows = await prisma.conversation.findMany({
+    orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+  })
 
   return NextResponse.json({
     conversations: rows.map(serializeConversation),
@@ -805,13 +650,8 @@ export async function listConversations() {
 }
 
 export async function readConversation(conversationId: string) {
-  const row = getDatabase()
-    .prepare(`
-      SELECT *
-      FROM conversations
-      WHERE id = ?
-    `)
-    .get(conversationId) as Record<string, unknown> | undefined
+  await initDatabase()
+  const row = await prisma.conversation.findUnique({ where: { id: conversationId } })
 
   if (!row) {
     return errorResponse(apiError("会话不存在。", 404, CONVERSATION_NOT_FOUND_CODE))
@@ -821,75 +661,61 @@ export async function readConversation(conversationId: string) {
 }
 
 export async function readConversationMessages(conversationId: string) {
-  const db = getDatabase()
-  const conversationExists = db
-    .prepare("SELECT 1 FROM conversations WHERE id = ?")
-    .get(conversationId)
+  await initDatabase()
+  const conversationExists = await prisma.conversation.findUnique({
+    where: { id: conversationId },
+    select: { id: true },
+  })
 
   if (!conversationExists) {
     return errorResponse(apiError("会话不存在。", 404, CONVERSATION_NOT_FOUND_CODE))
   }
 
-  const messageRows = db
-    .prepare(`
-      SELECT *
-      FROM messages
-      WHERE conversation_id = ?
-      ORDER BY sort_order ASC, created_at ASC, id ASC
-    `)
-    .all(conversationId) as Array<Record<string, unknown>>
+  const messageRows = await prisma.message.findMany({
+    where: { conversationId },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }, { id: "asc" }],
+  })
 
-  const messageIds = messageRows.map((row) => String(row.id))
-  const assetsByMessageId = listAssetsByMessageIds(db, messageIds)
-  const tasksByReplyMessageId = listTasksByReplyMessageIds(db, messageIds)
+  const messageIds = messageRows.map((row) => row.id)
+  const [assetsByMessageId, tasksByReplyMessageId] = await Promise.all([
+    listAssetsByMessageIds(messageIds),
+    listTasksByReplyMessageIds(messageIds),
+  ])
 
   return NextResponse.json({
     messages: messageRows.map((row) =>
       serializeMessage(
         row,
-        assetsByMessageId.get(String(row.id)) ?? [],
-        tasksByReplyMessageId.get(String(row.id)),
+        assetsByMessageId.get(row.id) ?? [],
+        tasksByReplyMessageId.get(row.id),
       ),
     ),
   })
 }
 
 export async function listDrawTasks() {
-  const db = getDatabase()
-  const rows = db
-    .prepare(`
-      SELECT *
-      FROM draw_tasks
-      ORDER BY created_at DESC, id DESC
-      LIMIT 50
-    `)
-    .all() as Array<Record<string, unknown>>
+  await initDatabase()
+  const rows = await prisma.drawTask.findMany({
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: 50,
+  })
 
-  const assetsByTaskId = listAssetsByTaskIds(
-    db,
-    rows.map((row) => String(row.id)),
-  )
+  const assetsByTaskId = await listAssetsByTaskIds(rows.map((row) => row.id))
 
   return NextResponse.json({
-    tasks: rows.map((row) => serializeTask(row, assetsByTaskId.get(String(row.id)) ?? [])),
+    tasks: rows.map((row) => serializeTask(row, assetsByTaskId.get(row.id) ?? [])),
   })
 }
 
 export async function readDrawTask(taskId: string) {
-  const db = getDatabase()
-  const row = db
-    .prepare(`
-      SELECT *
-      FROM draw_tasks
-      WHERE id = ?
-    `)
-    .get(taskId) as Record<string, unknown> | undefined
+  await initDatabase()
+  const row = await prisma.drawTask.findUnique({ where: { id: taskId } })
 
   if (!row) {
     return errorResponse(apiError("任务不存在。", 404))
   }
 
-  const assetsByTaskId = listAssetsByTaskIds(db, [taskId])
+  const assetsByTaskId = await listAssetsByTaskIds([taskId])
   return NextResponse.json({
     task: serializeTask(row, assetsByTaskId.get(taskId) ?? []),
   })
@@ -909,67 +735,79 @@ export async function createDrawTask(request: Request) {
 }
 
 async function createSynchronousDrawTask(input: DrawTaskInput): Promise<DrawTaskRecord> {
-  const db = getDatabase()
-  const conversationExists = db
-    .prepare("SELECT 1 FROM conversations WHERE id = ?")
-    .get(input.conversationId)
-
-  if (!conversationExists) {
-    throw apiError("会话不存在。", 404, CONVERSATION_NOT_FOUND_CODE)
-  }
-
+  await initDatabase()
   const taskId = buildId("task")
   const requestMessageId = buildId("message")
   const replyMessageId = buildId("message")
-  const nextSortOrderRow = db
-    .prepare(`
-      SELECT COALESCE(MAX(sort_order), 0) AS max_sort_order
-      FROM messages
-      WHERE conversation_id = ?
-    `)
-    .get(input.conversationId) as { max_sort_order: number }
-  const nextSortOrder = Number(nextSortOrderRow.max_sort_order ?? 0) + 1
 
-  db.prepare(`
-    INSERT INTO messages (
-      id, conversation_id, role, type, text, status, sort_order
-    ) VALUES (?, ?, 'user', 'prompt', ?, 'succeeded', ?)
-  `).run(requestMessageId, input.conversationId, input.prompt, nextSortOrder)
+  await prisma.$transaction(async (tx) => {
+    const conversationExists = await tx.conversation.findUnique({
+      where: { id: input.conversationId },
+      select: { id: true },
+    })
 
-  db.prepare(`
-    INSERT INTO messages (
-      id, conversation_id, role, type, text, status, sort_order
-    ) VALUES (?, ?, 'assistant', 'image_result', NULL, 'pending', ?)
-  `).run(replyMessageId, input.conversationId, nextSortOrder + 1)
+    if (!conversationExists) {
+      throw apiError("会话不存在。", 404, CONVERSATION_NOT_FOUND_CODE)
+    }
 
-  db.prepare(`
-    INSERT INTO draw_tasks (
-      id, conversation_id, request_message_id, reply_message_id, prompt, model, size,
-      quality, output_count, branch_mode, parent_asset_id, status, progress, attempts,
-      started_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'queued', 0, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-  `).run(
-    taskId,
-    input.conversationId,
-    requestMessageId,
-    replyMessageId,
-    input.prompt,
-    input.model,
-    input.size,
-    input.quality,
-    input.outputCount,
-    input.branchMode,
-    input.parentAssetId,
-  )
+    const nextSortOrderAggregate = await tx.message.aggregate({
+      where: { conversationId: input.conversationId },
+      _max: { sortOrder: true },
+    })
+    const nextSortOrder = (nextSortOrderAggregate._max.sortOrder ?? 0) + 1
 
-  db.prepare(`
-    UPDATE conversations
-    SET updated_at = CURRENT_TIMESTAMP
-    WHERE id = ?
-  `).run(input.conversationId)
+    await tx.message.create({
+      data: {
+        id: requestMessageId,
+        conversationId: input.conversationId,
+        role: "user",
+        type: "prompt",
+        text: input.prompt,
+        status: "succeeded",
+        sortOrder: nextSortOrder,
+      },
+    })
+
+    await tx.message.create({
+      data: {
+        id: replyMessageId,
+        conversationId: input.conversationId,
+        role: "assistant",
+        type: "image_result",
+        text: null,
+        status: "pending",
+        sortOrder: nextSortOrder + 1,
+      },
+    })
+
+    await tx.drawTask.create({
+      data: {
+        id: taskId,
+        conversationId: input.conversationId,
+        requestMessageId,
+        replyMessageId,
+        prompt: input.prompt,
+        model: input.model,
+        size: input.size,
+        quality: input.quality,
+        outputCount: input.outputCount,
+        branchMode: input.branchMode,
+        parentAssetId: input.parentAssetId,
+        status: "queued",
+        progress: 0,
+        attempts: 1,
+        startedAt: new Date(),
+      },
+    })
+
+    await tx.conversation.update({
+      where: { id: input.conversationId },
+      data: { updatedAt: new Date() },
+    })
+  })
 
   try {
-    const providerConfig = getProviderConfigRecord()
+    const providerConfig = await getProviderConfigRecord()
     const sourceImageBytes = input.parentAssetId
       ? await readSourceImageBytes(input.parentAssetId)
       : undefined
@@ -982,66 +820,62 @@ async function createSynchronousDrawTask(input: DrawTaskInput): Promise<DrawTask
       imageBytesList.map((imageBytes) => saveGeneratedImage(imageBytes)),
     )
 
-    db.prepare(`
-      UPDATE draw_tasks
-      SET status = 'succeeded',
-          progress = 100,
-          result_filename = ?,
-          error_message = NULL,
-          finished_at = CURRENT_TIMESTAMP,
-          updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `).run(persistedImages[0]?.filename ?? null, taskId)
+    await prisma.$transaction(async (tx) => {
+      await tx.drawTask.update({
+        where: { id: taskId },
+        data: {
+          status: "succeeded",
+          progress: 100,
+          resultFilename: persistedImages[0]?.filename ?? null,
+          errorMessage: null,
+          finishedAt: new Date(),
+        },
+      })
 
-    db.prepare(`
-      UPDATE messages
-      SET status = 'succeeded', updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `).run(replyMessageId)
+      await tx.message.update({
+        where: { id: replyMessageId },
+        data: { status: "succeeded" },
+      })
 
-    db.prepare("DELETE FROM image_assets WHERE task_id = ?").run(taskId)
+      await tx.imageAsset.deleteMany({ where: { taskId } })
 
-    const insertAssetStatement = db.prepare(`
-      INSERT INTO image_assets (
-        id, task_id, conversation_id, message_id, filename, width, height, sort_order
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `)
-
-    for (const [index, image] of persistedImages.entries()) {
-      insertAssetStatement.run(
-        buildId("asset"),
-        taskId,
-        input.conversationId,
-        replyMessageId,
-        image.filename,
-        image.width,
-        image.height,
-        index,
-      )
-    }
+      if (persistedImages.length > 0) {
+        await tx.imageAsset.createMany({
+          data: persistedImages.map((image, index) => ({
+            id: buildId("asset"),
+            taskId,
+            conversationId: input.conversationId,
+            messageId: replyMessageId,
+            filename: image.filename,
+            width: image.width,
+            height: image.height,
+            sortOrder: index,
+          })),
+        })
+      }
+    })
   } catch (error) {
     const normalizedError = normalizeError(error)
 
-    db.prepare(`
-      UPDATE draw_tasks
-      SET status = 'failed',
-          error_message = ?,
-          finished_at = CURRENT_TIMESTAMP,
-          updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `).run(normalizedError.message, taskId)
+    await prisma.$transaction(async (tx) => {
+      await tx.drawTask.update({
+        where: { id: taskId },
+        data: {
+          status: "failed",
+          errorMessage: normalizedError.message,
+          finishedAt: new Date(),
+        },
+      })
 
-    db.prepare(`
-      UPDATE messages
-      SET status = 'failed', updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `).run(replyMessageId)
+      await tx.message.update({
+        where: { id: replyMessageId },
+        data: { status: "failed" },
+      })
+    })
   }
 
-  const taskRow = db
-    .prepare("SELECT * FROM draw_tasks WHERE id = ?")
-    .get(taskId) as Record<string, unknown>
-  const assetsByTaskId = listAssetsByTaskIds(db, [taskId])
+  const taskRow = await prisma.drawTask.findUniqueOrThrow({ where: { id: taskId } })
+  const assetsByTaskId = await listAssetsByTaskIds([taskId])
   return serializeTask(taskRow, assetsByTaskId.get(taskId) ?? [])
 }
 
@@ -1070,7 +904,7 @@ export async function generateImage(request: Request) {
   if ("message" in input) return errorResponse(input)
 
   try {
-    const providerConfig = getProviderConfigRecord()
+    const providerConfig = await getProviderConfigRecord()
     const [imageBytes] = await generateOpenAiImages(
       { ...input, outputCount: 1 },
       providerConfig,

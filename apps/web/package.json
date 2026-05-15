@@ -10,15 +10,22 @@
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prisma:generate": "prisma --config ../../prisma.config.ts generate",
+    "prisma:migrate": "prisma --config ../../prisma.config.ts migrate dev",
+    "prisma:studio": "prisma --config ../../prisma.config.ts studio"
   },
   "dependencies": {
+    "@prisma/adapter-better-sqlite3": "^7.8.0",
+    "@prisma/client": "^7.8.0",
     "@workspace/ui": "workspace:*",
     "ai": "^6.0.177",
+    "better-sqlite3": "^12.10.0",
     "lucide-react": "^1.14.0",
     "nanoid": "^5.1.11",
     "next": "16.1.6",
     "next-themes": "^0.4.6",
+    "prisma": "^7.8.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "use-immer": "^0.11.0"

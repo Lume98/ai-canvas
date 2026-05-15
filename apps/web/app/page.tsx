@@ -1,5 +1,5 @@
-import { AiCanvas } from "@/components/canvas/ai-canvas"
+import { redirect } from "next/navigation"
 
-export default function Page() {
-  return <AiCanvas />
+export default function HomePage() {
+  redirect("/canvas")
 }

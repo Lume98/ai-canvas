@@ -275,7 +275,7 @@ export function useAiCanvasController(initialConversationId: string | null = nul
   }
 
   function syncConversationLocation(nextConversationId: string) {
-    const nextPathname = `/${encodeURIComponent(nextConversationId)}`
+    const nextPathname = `/canvas/${encodeURIComponent(nextConversationId)}`
     if (pathname === nextPathname) return
 
     router.replace(nextPathname, { scroll: false })

@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Conversation {
+  id        String   @id
+  title     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  messages Message[]
+  assets   ImageAsset[]
+
+  @@map("conversations")
+}
+
+model Message {
+  id             String   @id
+  conversationId String   @map("conversation_id")
+  role           String
+  type           String
+  text           String?
+  status         String
+  sortOrder      Int      @default(0) @map("sort_order")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  assets       ImageAsset[]
+
+  @@index([conversationId, sortOrder, createdAt], map: "idx_messages_conversation_created_at")
+  @@map("messages")
+}
+
+model DrawTask {
+  id               String    @id
+  conversationId   String?   @map("conversation_id")
+  requestMessageId String?   @map("request_message_id")
+  replyMessageId   String?   @map("reply_message_id")
+  prompt           String
+  model            String
+  size             String
+  quality          String
+  outputCount      Int       @default(1) @map("output_count")
+  branchMode       String?   @map("branch_mode")
+  parentAssetId    String?   @map("parent_asset_id")
+  status           String
+  progress         Int       @default(0)
+  resultFilename   String?   @map("result_filename")
+  errorMessage     String?   @map("error_message")
+  attempts         Int       @default(0)
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at")
+  startedAt        DateTime? @map("started_at")
+  finishedAt       DateTime? @map("finished_at")
+
+  assets ImageAsset[]
+
+  @@index([status, createdAt], map: "idx_draw_tasks_status_created_at")
+  @@index([conversationId, createdAt], map: "idx_draw_tasks_conversation_created_at")
+  @@index([replyMessageId], map: "idx_draw_tasks_reply_message_id")
+  @@map("draw_tasks")
+}
+
+model ImageAsset {
+  id             String   @id
+  taskId         String   @map("task_id")
+  conversationId String   @map("conversation_id")
+  messageId      String   @map("message_id")
+  filename       String
+  width          Int
+  height         Int
+  sortOrder      Int      @default(0) @map("sort_order")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  task         DrawTask     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  message      Message      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId, sortOrder], map: "idx_image_assets_message_sort_order")
+  @@map("image_assets")
+}
+
+model ProviderConfig {
+  id        Int      @id
+  apiKey    String   @map("api_key")
+  baseUrl   String   @map("base_url")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("provider_config")
+}
